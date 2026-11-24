@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BULL RUN — Le jeu du trader (France & USA) 🤖</title>
+<style>
+  :root{
+    --bg:#f2f6fd; --panel:#ffffff; --panel2:#f6f9ff; --line:#dbe4f5;
+    --txt:#17223b; --muted:#5f6f92;
+    --green:#0a9e5b; --red:#e0245e; --gold:#c77700; --blue:#2563eb; --purple:#7c3aed;
+    --shadow:0 4px 18px rgba(37,99,235,.08), 0 1px 3px rgba(23,34,59,.06);
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  body{background:
+      radial-gradient(1100px 480px at 85% -10%, rgba(37,99,235,.10), transparent 60%),
+      radial-gradient(900px 420px at 5% 110%, rgba(10,158,91,.08), transparent 60%),
+      var(--bg);
+    color:var(--txt); font-family:'Segoe UI',system-ui,-apple-system,sans-serif; min-height:100vh}
+
+  /* ===== BANDEAU DÉFILANT ===== */
+  .tape{background:#ffffffcc; backdrop-filter:blur(6px); border-bottom:1px solid var(--line); overflow:hidden; white-space:nowrap; padding:7px 0; font-size:.8rem; font-family:ui-monospace,Consolas,monospace}
+  .tape-inner{display:inline-block; animation:tape 40s linear infinite}
+  @keyframes tape{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+  .tape span{margin:0 22px}
+
+  header{max-width:1200px;margin:0 auto;padding:18px 16px 6px;display:flex;flex-wrap:wrap;align-items:center;gap:14px}
+  .logo{font-family:ui-monospace,Consolas,monospace;font-size:1.5rem;font-weight:800;letter-spacing:2px}
+  .logo b{color:var(--green)} .logo i{color:var(--red);font-style:normal}
+  .levels{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:.8rem}
+  .lvl-chip{background:#fff;border:1px solid var(--line);padding:6px 14px;border-radius:99px;font-weight:700;box-shadow:var(--shadow)}
+  .lvl-chip.up{border-color:var(--gold);color:var(--gold);animation:pulse 1.2s 3}
+  @keyframes pulse{50%{box-shadow:0 0 18px rgba(199,119,0,.45)}}
+  .xpbar{width:170px;height:8px;background:var(--line);border-radius:99px;overflow:hidden}
+  .xpbar>div{height:100%;background:linear-gradient(90deg,var(--blue),var(--purple));width:0%;transition:width .6s}
+  .small{color:var(--muted);font-size:.68rem;font-family:ui-monospace,Consolas,monospace}
+
+  .wrap{max-width:1200px;margin:0 auto;padding:10px 16px 40px}
+  .dashboard{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:10px 0 16px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;box-shadow:var(--shadow)}
+  .card .lbl{color:var(--muted);font-size:.68rem;text-transform:uppercase;letter-spacing:1px}
+  .card .val{font-size:1.4rem;font-weight:800;margin-top:4px;font-variant-numeric:tabular-nums}
+  .pos{color:var(--green)} .neg{color:var(--red)} .gold{color:var(--gold)} .blue{color:var(--blue)}
+
+  .cols{display:grid;grid-template-columns:1.55fr 1fr;gap:16px}
+  @media(max-width:900px){.cols{grid-template-columns:1fr}}
+
+  section{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:var(--shadow)}
+  section h2{font-size:.78rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);padding:12px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;background:linear-gradient(90deg,#f8fbff,#ffffff)}
+  section h2 .hint{margin-left:auto;font-size:.68rem;font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted)}
+
+  table{width:100%;border-collapse:collapse;font-size:.86rem}
+  th{color:var(--muted);text-align:left;font-size:.64rem;text-transform:uppercase;letter-spacing:1px;padding:9px 10px;border-bottom:1px solid var(--line);background:#fbfcff}
+  td{padding:9px 10px;border-bottom:1px solid #eef2fa}
+  tbody tr{transition:background .15s}
+  #marketBody tr{cursor:grab}
+  #marketBody tr:hover{background:rgba(37,99,235,.06)}
+  tr.dragging{opacity:.35}
+  .flag{font-size:.95rem;margin-right:6px}
+  .sym{font-family:ui-monospace,Consolas,monospace;color:var(--muted);font-size:.72rem}
+  .price{font-variant-numeric:tabular-nums;font-weight:700}
+  .spark{width:74px;height:26px}
+  .pill{display:inline-block;min-width:64px;text-align:center;padding:2px 8px;border-radius:99px;font-size:.72rem;font-weight:800;font-family:ui-monospace,Consolas,monospace}
+  .pill.g{background:rgba(10,158,91,.10);color:var(--green)}
+  .pill.r{background:rgba(224,36,94,.10);color:var(--red)}
+  .mini{border:1px solid var(--line);background:#fff;color:var(--txt);border-radius:8px;padding:4px 9px;font-size:.74rem;font-weight:700;cursor:pointer;box-shadow:0 1px 2px rgba(23,34,59,.05)}
+  .mini:hover{border-color:var(--blue);color:var(--blue)}
+
+  #dropzone{min-height:230px;padding:12px 14px}
+  .drop-hint{color:var(--muted);border:2px dashed #c4d2ef;border-radius:12px;background:#fbfcff;padding:34px 14px;text-align:center;font-size:.86rem;line-height:1.6}
+  .drop-hint b{color:var(--blue)}
+  #dropzone.over{background:rgba(37,99,235,.09);border-color:var(--blue)}
+  .holding{display:flex;align-items:center;gap:10px;background:#fbfcff;border:1px solid var(--line);border-radius:12px;padding:9px 11px;margin-bottom:8px;transition:transform .15s}
+  .holding:hover{border-color:var(--purple)}
+  .holding .nm{font-weight:700;flex:1}
+  .holding .nm small{display:block;color:var(--muted);font-weight:400}
+  .holding .amt{font-family:ui-monospace,Consolas,monospace;font-variant-numeric:tabular-nums;font-weight:700}
+  .holding button{background:#fff;border:1px solid var(--line);color:var(--txt);border-radius:6px;width:26px;height:26px;font-weight:800;cursor:pointer}
+  .holding button:hover{border-color:var(--green);color:var(--green)}
+
+  .portfolio-total{font-size:.74rem;color:var(--muted);margin-top:2px}
+
+  .actions{padding:12px 14px;border-top:1px solid var(--line);display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#fbfcff}
+  .btn-run{flex:1;background:linear-gradient(90deg,#0fbf74,#22d68a);color:#fff; border:none;border-radius:11px;padding:13px;font-size:.95rem;font-weight:800;letter-spacing:1px;cursor:pointer;box-shadow:0 6px 20px rgba(10,158,91,.30)}
+  .btn-run:hover{filter:brightness(1.06)}
+  .btn-run:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
+  .btn-reset{background:#fff;border:1px solid var(--line);color:var(--muted);border-radius:11px;padding:13px 14px;font-weight:700;cursor:pointer;font-size:.8rem}
+  .btn-reset:hover{color:var(--red);border-color:var(--red)}
+
+  #feed{padding:8px 14px 14px;max-height:300px;overflow-y:auto}
+  .fline{border-left:3px solid var(--line);padding:8px 10px;margin-top:8px;border-radius:0 10px 10px 0;background:#fbfcff;font-size:.82rem;line-height:1.55;animation:in .35s}
+  .fline b{color:var(--gold)} .fline.news{border-color:var(--gold);background:#fffaf0} .fline.good{border-color:var(--green);background:#f2fcf7} .fline.bad{border-color:var(--red);background:#fdf3f6} .fline.edu{border-color:var(--purple);background:#f9f5ff}
+  .fline .tag{display:inline-block;font-size:.62rem;font-weight:800;letter-spacing:1px;color:var(--muted);margin-bottom:2px}
+  @keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  canvas#bigchart{width:100%;height:150px;display:block;background:#fbfcff}
+
+  .fact{margin-top:16px;background:linear-gradient(135deg,rgba(124,58,237,.08),rgba(37,99,235,.06));border:1px solid rgba(124,58,237,.22);border-radius:14px;padding:12px 14px;font-size:.84rem;line-height:1.6;box-shadow:var(--shadow)}
+  .fact b{color:var(--purple)}
+
+  /* ===== ROBOT COACH ===== */
+  #bot{position:fixed;right:18px;bottom:18px;z-index:20;display:flex;align-items:flex-end;gap:10px;max-width:330px}
+  #botBubble{background:#ffffff;border:1px solid var(--blue);border-radius:16px 16px 4px 16px;padding:12px 14px;font-size:.82rem;line-height:1.55;box-shadow:0 12px 34px rgba(37,99,235,.18);opacity:0;transform:translateY(8px);transition:.35s}
+  #botBubble.show{opacity:1;transform:none}
+  #botBubble .who{color:var(--blue);font-weight:800;font-size:.68rem;letter-spacing:1px;margin-bottom:3px}
+  #botAvatar{width:58px;height:58px;flex:none;border-radius:50%;background:radial-gradient(circle at 32% 28%, #ffffff, #e3ecff);border:2px solid var(--blue);display:flex;align-items:center;justify-content:center;font-size:1.7rem;cursor:pointer;box-shadow:0 0 22px rgba(37,99,235,.28);animation:bob 2.6s ease-in-out infinite}
+  #botAvatar.mood-happy{border-color:var(--green);box-shadow:0 0 22px rgba(10,158,91,.35)}
+  #botAvatar.mood-warn{border-color:var(--gold);box-shadow:0 0 22px rgba(199,119,0,.35)}
+  @keyframes bob{50%{transform:translateY(-6px)}}
+  #botHide{position:fixed;right:18px;bottom:14px;font-size:.68rem;color:var(--muted);cursor:pointer;z-index:19;background:#fff;border:1px solid var(--line);border-radius:99px;padding:3px 10px}
+  #botHide:hover{color:var(--txt)}
+  #bot.min .mate{display:none}
+  #bot.min #botBubble{display:none}
+
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(90px);background:#fff;border:1px solid var(--gold);border-radius:12px;padding:13px 22px;font-weight:800;font-size:.95rem;transition:transform .4s;z-index:9;box-shadow:0 10px 40px rgba(199,119,0,.25)}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+
+  .disc{color:var(--muted);font-size:.7rem;line-height:1.6;margin-top:22px;text-align:center}
+  .flashup{animation:fu .8s} .flashdown{animation:fd .8s}
+  @keyframes fu{0%{background:rgba(10,158,91,.16)}100%{background:transparent}}
+  @keyframes fd{0%{background:rgba(224,36,94,.14)}100%{background:transparent}}
+</style>
+</head>
+<body>
+
+<div class="tape"><div class="tape-inner" id="tape"></div></div>
+
+<header>
+  <div class="logo"><b>▲ BULL</b><i>RUN</i> <span style="font-size:.7rem;color:var(--muted);letter-spacing:1px">SIMULATEUR DE TRADING · FRANCE 🇫🇷 / USA 🇺🇸 · 🤖 COACH BULL-E</span></div>
+  <div class="levels">
+    <div class="lvl-chip" id="lvlChip">🎓 Stagiaire</div>
+    <div class="xpbar"><div id="xpFill"></div></div>
+    <div class="small" id="xpTxt"></div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="dashboard">
+    <div class="card"><div class="lbl">💵 Cash disponible</div><div class="val" id="cash"></div></div>
+    <div class="card"><div class="lbl">💼 Valeur portefeuille</div><div class="val" id="pv"></div></div>
+    <div class="card"><div class="lbl">📊 Fortune totale</div><div class="val blue" id="total"></div></div>
+    <div class="card"><div class="lbl">📈 Gain / Perte</div><div class="val" id="pnl"></div></div>
+    <div class="card"><div class="lbl">🗓️ Année simulée</div><div class="val gold" id="year">2026</div></div>
+  </div>
+
+  <div class="cols">
+    <section>
+      <h2>📋 Marché — glisse une entreprise vers ton portefeuille <span class="hint">→</span></h2>
+      <table>
+        <thead><tr><th>Entreprise</th><th>Cours</th><th>Depuis départ</th><th>Tendance</th><th>Achat rapide</th></tr></thead>
+        <tbody id="marketBody"></tbody>
+      </table>
+    </section>
+
+    <div>
+      <section id="pfSection">
+        <h2>💼 Ton portefeuille <span class="hint">glisse ici (ou reviens ici pour vendre)</span></h2>
+        <div id="dropzone">
+          <div class="drop-hint" id="dropHint">👉 <b>Glisse-dépose</b> une entreprise du marché ici pour l'acheter<br>(1 000 € investis par défaut, boutons + / − pour ajuster)</div>
+        </div>
+        <div class="actions">
+          <button class="btn-run" id="runBtn" onclick="runYear()">⚔️ SIMULER L'ANNÉE SUIVANTE</button>
+          <button class="btn-reset" onclick="resetGame()">Recommencer</button>
+        </div>
+      </section>
+
+      <section style="margin-top:16px">
+        <h2>📈 Évolution de ta fortune</h2>
+        <canvas id="bigchart" width="460" height="150"></canvas>
+      </section>
+    </div>
+  </div>
+
+  <div class="cols" style="margin-top:16px">
+    <section>
+      <h2>🛰️ Fil d'actualité du marché</h2>
+      <div id="feed">
+        <div class="fline edu"><span class="tag">TUTORIEL</span>Bienvenue ! Tu démarres avec <b>20 000 €</b> fictifs.<br>
+        1️⃣ Glisse des entreprises dans ton portefeuille (jusqu'à 5 positions).<br>
+        2️⃣ Clique sur <b>« Simuler l'année suivante »</b> : l'actu va frapper, les cours vont bouger.<br>
+        3️⃣ Chaque niveau exige un <b>plafond de fortune</b> : Grimpe jusqu'à 100 000 € pour devenir une Légende de Wall Street ! 🏆</div>
+      </div>
+    </section>
+    <div>
+      <section>
+        <h2>🎯 Feuille de route (paliers de fortune)</h2>
+        <div id="roadmap" style="padding:10px 14px 14px"></div>
+      </section>
+      <div class="fact" id="fact"></div>
+    </div>
+  </div>
+
+  <div class="disc">⚠️ Jeu pédagogique. Cours de départ = cotations réelles récentes (23 nov., Coin Academy). Les années simulées sont aléatoires, inspirées d'événements de marché réels. Ne constitue pas un conseil en investissement.</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div id="bot">
+  <div id="botBubble"><div class="who">🤖 BULL-E · TON COACH</div><div id="botMsg">Salut, moi c'est BULL-E ! Je te donne des indices pour gagner. Commence par glisser 2 ou 3 entreprises différentes dans ton portefeuille 😉</div></div>
+  <div class="mate"><div id="botAvatar" onclick="botTip()">🤖</div></div>
+</div>
+<div id="botHide" onclick="toggleBot()"> réduire </div>
+
+<script>
+"use strict";
+
+/* ============ DONNÉES : cours réels récents + profil de risque ============ */
+const COMPANIES = [
+  {sym:"NVDA", name:"NVIDIA",            flag:"🇺🇸", country:"USA",  sector:"Semi-conducteurs / IA", p:114.20,  trend:-0.12, vol:0.30, start:114.20,
+   fact:"NVIDIA fabrique les puces (GPU) qui font tourner l'IA mondiale : ChatGPT, voitures autonomes, centres de données. Son carnet de commandes est si rempli que la moindre déception fait flamber le cours dans les deux sens."},
+  {sym:"AAPL", name:"Apple",             flag:"🇺🇸", country:"USA",  sector:"Technologie / Grand public", p:311.63, trend:-0.02, vol:0.13, start:311.63,
+   fact:"Apple gagne beaucoup d'argent grâce aux services (App Store, iCloud) en plus des iPhone. C'est le genre d'entreprise qu'on appelle « défensive » : elle tremble moins en cas de crise."},
+  {sym:"MSFT", name:"Microsoft",         flag:"🇺🇸", country:"USA",  sector:"Logiciels / Cloud", p:440.77, trend:-0.03, vol:0.15, start:440.77,
+   fact:"Microsoft loue la puissance de calcul IA aux autres entreprises via Azure. Ses revenus d'abonnement (Office) sont très réguliers : les investisseurs adorent la visibilité."},
+  {sym:"GOOGL",name:"Alphabet (Google)", flag:"🇺🇸", country:"USA",  sector:"Publicité / Internet", p:241.34, trend:-0.03, vol:0.16, start:241.34,
+   fact:"Google vit surtout de la publicité. Si l'économie ralentit, les marques coupent les pubs en premier : son cours est très lié à la santé de l'économie."},
+  {sym:"AMZN", name:"Amazon",            flag:"🇺🇸", country:"USA",  sector:"E-commerce / Cloud", p:224.53, trend:-0.04, vol:0.18, start:224.53,
+   fact:"Le vrai joyau d'Amazon, c'est AWS : le cloud qui héberge une grande partie d'Internet. Une seule action coûte plus de 200 €, mais tu peux en acheter une fraction."},
+  {sym:"META", name:"Meta Platforms",    flag:"🇺🇸", country:"USA",  sector:"Réseaux sociaux", p:510.20, trend:-0.06, vol:0.22, start:510.20,
+   fact:"Meta (Facebook, Instagram, WhatsApp) dépense des dizaines de milliards dans l'IA. Quand les investisseurs jugent ces dépenses trop folles, l'action chute violemment."},
+  {sym:"TSLA", name:"Tesla",             flag:"🇺🇸", country:"USA",  sector:"Automobile / Énergie", p:314.68, trend:-0.07, vol:0.30, start:314.68,
+   fact:"Tesla vaut plus que tous les autres constructeurs réunis, alors qu'elle vend moins de voitures : le marché paie ses projets futurs (robots, autopilote). C'est une action « histoire », très émotionnelle."},
+  {sym:"MC",   name:"LVMH",              flag:"🇫🇷", country:"France", sector:"Luxe", p:381.95, trend:-0.03, vol:0.13, start:381.95,
+   fact:"LVMH, c'est Louis Vuitton, Dior, Tiffany… Une star du CAC 40. Le luxe dépend beaucoup des consommateurs chinois : dès que la Chine tousse, LVMH éternue."},
+  {sym:"OR",   name:"L'Oréal",           flag:"🇫🇷", country:"France", sector:"Cosmétique", p:435.00, trend:-0.01, vol:0.11, start:435.00,
+   fact:"L'Oréal vend ses produits partout dans le monde et verse un dividende presque chaque année. Les dividendes = une partie des bénéfices reversée aux actionnaires."},
+  {sym:"AIR",  name:"Airbus",            flag:"🇫🇷", country:"France", sector:"Aéronautique", p:189.96, trend:-0.04, vol:0.15, start:189.96,
+   fact:"Airbus a des années de commandes d'avance (carnet de commandes géant). Son défi : produire assez vite. Chaque retard d'avion se voit dans le cours de bourse."},
+  {sym:"TTE",  name:"TotalEnergies",     flag:"🇫🇷", country:"France", sector:"Énergie / Pétrole", p:78.19, trend:-0.01, vol:0.12, start:78.19,
+   fact:"TotalEnergies suit le prix du baril ET verse un gros dividende. C'est un pari sur l'énergie : pétrole aujourd'hui, renouvelables demain."},
+  {sym:"RMS",  name:"Hermès",            flag:"🇫🇷", country:"France", sector:"Luxe", p:1225.50, trend:-0.04, vol:0.16, start:1225.50,
+   fact:"Hermès est l'action la plus chère de la Bourse de Paris (> 1 200 €). Sa clientèle ultra-riche est moins sensible aux crises : le sac Birkin se vend même en récession."},
+];
+
+const EVENTS = [
+  {t:"NVIDIA annonce une demande de puces IA « sans fin » : le titre s'envole", eff:{NVDA:+0.12}, kind:"good"},
+  {t:"Peur de bulle IA : les investisseurs fuient les valeurs tech", eff:{NVDA:-0.13, META:-0.06, MSFT:-0.04, AMZN:-0.04, GOOGL:-0.04, TSLA:-0.05}, kind:"bad"},
+  {t:"Résultats d'Apple au-dessus des attentes, dividende augmenté", eff:{AAPL:+0.08}, kind:"good"},
+  {t:"Microsoft : Azure explose grâce à l'IA", eff:{MSFT:+0.09, NVDA:+0.04}, kind:"good"},
+  {t:"Rumeur de blocage d'Google en Europe : amende record envisagée", eff:{GOOGL:-0.08}, kind:"bad"},
+  {t:"Les consommateurs américains dépensent à fond : record pour Amazon", eff:{AMZN:+0.08}, kind:"good"},
+  {t:"Meta choque : capex IA encore plus massif que prévu, action sanctionnée", eff:{META:-0.09}, kind:"bad"},
+  {t:"Les commandes d'avions s'enchaînent : Airbus prend de l'altitude", eff:{AIR:+0.08}, kind:"good"},
+  {t:"Problèmes de production chez Airbus, retards de livraisons", eff:{AIR:-0.07}, kind:"bad"},
+  {t:"Le baril de pétrole chute : TotalEnergies sous pression", eff:{TTE:-0.06}, kind:"bad"},
+  {t:"Rupture d'approvisionnement : le pétrole flambe à la hausse", eff:{TTE:+0.07}, kind:"good"},
+  {t:"Les taux remontent, l'argent devient cher : le marché recule", eff:{NVDA:-0.05, AAPL:-0.03, MSFT:-0.03, AMZN:-0.03, GOOGL:-0.03, META:-0.04, TSLA:-0.04, MC:-0.03, OR:-0.02, AIR:-0.03, TTE:-0.01, RMS:-0.03}, kind:"bad"},
+  {t:"Les banques centrales baissent les taux : tout le marché festoie", eff:{NVDA:+0.06, AAPL:+0.04, MSFT:+0.04, AMZN:+0.04, GOOGL:+0.04, META:+0.04, TSLA:+0.04, MC:+0.04, OR:+0.04, AIR:+0.03, TTE:+0.01, RMS:+0.04}, kind:"good"},
+];
+
+const LESSONS = [
+  "💡 Zéro risque, zéro rendement : les actions qui peuvent beaucoup monter peuvent aussi beaucoup baisser.",
+  "💡 Diversifie ! Ne jamais mettre tout son argent sur une seule entreprise (règle d'or de la finance).",
+  "💡 Les valeurs « défensives » (L'Oréal, Apple) tremblent moins que les « dynamiques » (NVIDIA, Tesla).",
+  "💡 Le marché est émotionnel : la peur fait vendre trop bas, l'euphorie fait acheter trop cher.",
+  "💡 Investir sur 10+ ans lisse énormément le risque : c'est ce qu'on appelle l'horizon long.",
+  "💡 Un dividende est une somme versée par l'entreprise : un revenu régulier en plus de la hausse du cours.",
+  "💡 Le « capex » = l'argent qu'une entreprise investit dans son futur. Trop = danger, pas assez = déclin.",
+  "💡 Suivre l'actualité (résultats, taux, géopolitique) c'est 50% du métier d'analyste financier.",
+];
+
+/* ===== NIVEAUX : chaque palier exige un plafond de FORTUNE à atteindre ===== */
+const START_CASH = 20000, MAX_POS = 5;
+const LEVELS = [
+  {floor:0,      name:"🎓 Stagiaire"},
+  {floor:21000,  name:"📦 Chargé de clientèle"},
+  {floor:23000,  name:"📊 Junior Analyste"},
+  {floor:26000,  name:"💼 Analyste confirmé"},
+  {floor:30000,  name:"🤝 Associé M&A"},
+  {floor:38000,  name:"🏛️ Directeur des investissements"},
+  {floor:50000,  name:"🦈 Gérant de hedge fund"},
+  {floor:70000,  name:"💎 Milliardaire de la City"},
+  {floor:100000, name:"👑 Légende de Wall Street"},
+];
+
+let cash = START_CASH, year = 2026, phase = "build", lastLvlIdx = 0;
+let hist = [START_CASH];
+let holdings = [];
+
+const fmt = n => n.toLocaleString("fr-FR",{maximumFractionDigits:0});
+const eur = n => n.toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2})+" €";
+const total = () => cash + holdings.reduce((a,h)=>a+h.units*C(h.sym).p,0);
+const C = sym => COMPANIES.find(c=>c.sym===sym);
+
+/* ============ ROBOT COACH BULL-E ============ */
+const BOT_EL = { bubble:null, msg:null, ava:null };
+function botSay(html, mood){
+  if(!BOT_EL.bubble) BOT_EL.bubble = document.getElementById("botBubble");
+  if(!BOT_EL.msg) BOT_EL.msg = document.getElementById("botMsg");
+  if(!BOT_EL.ava) BOT_EL.ava = document.getElementById("botAvatar");
+  BOT_EL.msg.innerHTML = html;
+  BOT_EL.ava.className = mood ? "mood-"+mood : "";
+  BOT_EL.ava.textContent = mood==="happy" ? "😄" : (mood==="warn" ? "🤨" : "🤖");
+  BOT_EL.bubble.classList.add("show");
+}
+function toggleBot(){
+  const b = document.getElementById("bot");
+  b.classList.toggle("min");
+  document.getElementById("botHide").textContent = b.classList.contains("min") ? " 🤖 coach " : " réduire ";
+}
+/* Indices contextuels du robot, appelés après chaque action / événement */
+function botTip(){
+  const tv = total(), pos = holdings.length;
+  const pct = x => x/tv*100;
+  if(phase!=="build"){ botSay("⏳ Simulation en cours… attends la fin de l'année avant de bouger tes positions."); return; }
+  if(pos === 0) { botSay("👉 Glisse 2-3 entreprises dans ton portefeuille. Mon conseil de coach : <b>mélange sécurité et dynamisme</b> (ex. Apple + NVIDIA, ou L'Oréal + Tesla)."); return; }
+  if(pos === 1 && holdings[0].invested/tv > 0.8)
+    return botSay("🚨 <b>Indice n°1 pour gagner : ne mise PAS tout sur "+C(holdings[0].sym).name+" !</b> Une seule boîte = risque maximum. Sépare ton argent sur 3-5 entreprises de secteurs différents.", "warn");
+  if(cash/tv < 0.10)
+    return botSay("💸 Tu n'as presque plus de cash ("+pct(cash).toFixed(0)+"%). Garde toujours une réserve pour <b>acheter la baisse</b> après une mauvaise nouvelle.", "warn");
+  const worst = COMPANIES.slice().sort((a,b)=>(a.p/a.start)-(b.p/b.start))[0];
+  const best  = COMPANIES.slice().sort((a,b)=>(b.p/b.start)-(a.p/a.start))[0];
+  const dw = (worst.p/worst.start-1)*100, db = (best.p/best.start-1)*100;
+  if(dw < -8) return botSay("🕵️ <b>Indice :</b> "+worst.name+" a chuté de "+Math.abs(dw).toFixed(1)+"% depuis le départ. Les pros appellent ça une <b>occasion de valeur</b>… mais vérifie pourquoi avant d'acheter la baisse !");
+  if(db > 10) return botSay("🕵️ <b>Indice :</b> "+best.name+" affiche +"+db.toFixed(1)+"%. Attention : après une envolée, une correction est souvent proche. Le bon geste = <b>sécuriser une partie des gains</b> (vendre un tiers).");
+  return botSay("🧠 Marché calme. <b>Stratégie gagnante :</b> garde 5 positions max, garde du cash, et simule une année pour faire travailler ton argent. Les événements frappent toutes les ~20 s !");
+}
+setInterval(()=>{ if(phase==="build" && Math.random()<0.35) botTip(); }, 21000);
+
+/* ============ RENDU MARCHÉ ============ */
+function renderMarket(anim){
+  document.getElementById("marketBody").innerHTML = COMPANIES.map(c=>{
+    const chg = (c.p/c.start-1)*100, d24 = (c.p/c.prev-1)*100;
+    const cls = d24>0.01?"flashup":(d24<-0.01?"flashdown":"");
+    return `<tr class="${cls}" draggable="true" data-sym="${c.sym}" onclick="showFact('${c.sym}')">
+      <td><span class="flag">${c.flag}</span><b>${c.name}</b><br><span class="sym">${c.sym} · ${c.sector}</span></td>
+      <td class="price">${eur(c.p)}</td>
+      <td><span class="pill ${chg>=0?'g':'r'}">${chg>=0?'+':''}${chg.toFixed(1)}%</span></td>
+      <td><canvas class="spark" data-sym="${c.sym}" width="74" height="26"></canvas></td>
+      <td><button class="mini" onclick="event.stopPropagation();buy('${c.sym}',1000)">+ Achat 1 000 €</button></td>
+    </tr>`;
+  }).join("");
+  COMPANIES.forEach(c=>drawSpark(c));
+  document.getElementById("tape").innerHTML =
+    (COMPANIES.map(c=>{
+      const chg=(c.p/c.start-1)*100;
+      return `<span>${c.flag} ${c.sym} <b style="color:${chg>=0?'var(--green)':'var(--red)'}">${c.p.toFixed(2)} € (${chg>=0?'+':''}${chg.toFixed(1)}%)</b></span>`;
+    }).join("")).repeat(2);
+}
+
+function drawSpark(c){
+  const cv = document.querySelector(`canvas.spark[data-sym="${c.sym}"]`);
+  if(!cv) return;
+  const x = cv.getContext("2d"), h = c.hist;
+  x.clearRect(0,0,74,26);
+  const mn = Math.min(...h), mx = Math.max(...h);
+  const up = h[h.length-1] >= h[0];
+  x.strokeStyle = up ? "#0a9e5b" : "#e0245e";
+  x.lineWidth = 1.6; x.beginPath();
+  h.forEach((v,i)=>{
+    const px = 2 + i*(70/(h.length-1||1));
+    const py = 23 - ((v-mn)/((mx-mn)||1))*20;
+    i ? x.lineTo(px,py) : x.moveTo(px,py);
+  });
+  x.stroke();
+}
+
+/* ============ PORTFEUILLE ============ */
+function buy(sym, amount){
+  if(phase!=="build"){ botSay("⏳ Attend la fin de la simulation pour trader !"); return; }
+  if(holdings.length>=MAX_POS && !holdings.find(h=>h.sym===sym)){ toast("⚠️ Max 5 positions : diversifie tes choix !"); return; }
+  amount = Math.min(amount, cash);
+  if(amount < 100){ botSay("💸 Plus assez de cash pour cet achat. <b>Indice :</b> vends une position qui t'a rapporté pour financer les opportunités.", "warn"); return; }
+  const c = C(sym);
+  let h = holdings.find(x=>x.sym===sym);
+  const units = amount/c.p;
+  if(h){ h.units += units; h.invested += amount; }
+  else holdings.push({sym, units, invested:amount});
+  cash -= amount;
+  feed(`<b>Achat</b> : ${eur(amount)} de ${c.flag} ${c.name} → ${units.toFixed(3)} titre(s) à ${eur(c.p)}`, "good");
+  renderAll();
+  botAfterTrade(c, true);
+}
+
+function sell(h, all){
+  const c = C(h.sym);
+  const frac = all ? 1 : 1/3;
+  const u = Math.min(h.units, h.units*frac);
+  const val = u*c.p;
+  const profit = val - h.invested*(u/h.units);
+  cash += val; h.units -= u; h.invested = all ? 0 : h.invested*(h.units/(h.units+u));
+  if(all || h.units < 0.0005){ holdings = holdings.filter(x=>x!==h); }
+  feed(`<b>Vente</b> : ${eur(val)} récupérés sur ${c.flag} ${c.name} (${profit>=0?'+':''}${eur(profit)})`, profit>=0?"good":"bad");
+  renderAll();
+  botAfterTrade(c, false, val, profit);
+}
+
+function botAfterTrade(c, bought, val, profit){
+  if(bought){
+    if(holdings.length===1) botSay("👋 Bon choix ! Mais <b>indice de coach</b> : une seule entreprise = 100% du risque sur elle. Ajoute 1-2 valeurs différentes (luxe 🇫🇷 + tech 🇺🇸 par ex.) pour lisser les chocs.", "warn");
+    else if(holdings.length>=4) botSay("🧺 Belle diversification ("+holdings.length+" positions) : c'est exactement ce que font les gérants pros. Tu peux lancer l'année quand tu veux !", "happy");
+    else botSay("✅ "+c.name+" ajouté. Mon indice : surveille la colonne <b>« Depuis départ »</b> — les titres fortement négatifs cachent parfois des occasions… ou des pièges.");
+  } else {
+    botSay("💰 Vente de "+c.name+" : "+eur(val)+" récupérés ("+(profit>=0?"+":"")+eur(profit)+"). <b>Règle d'or :</b> vends quand ta thèse de départ n'est plus vraie, pas juste par peur 🙂");
+  }
+}
+
+/* ============ SIMULATION D'UNE ANNÉE ============ */
+function runYear(){
+  if(phase!=="build") return;
+  if(!holdings.length){ botSay("🛑 Impossible de simuler sans aucune position ! Glisse au moins une entreprise dans ton portefeuille.", "warn"); return; }
+  phase = "run";
+  document.getElementById("runBtn").disabled = true;
+  year++;
+  if(holdings.length===1) botSay("🎬 L'année commence… avec <b>une seule position</b>. Croise les doigts : si "+C(holdings[0].sym).name+" trébuche, tout ton portefeuille trébuche avec !", "warn");
+  else botSay("🎬 L'année "+year+" démarre. 2 à 3 événements d'actu vont tomber : regarde lesquels touchent TES entreprises 💥");
+  const evts = [];
+  const n = 2 + Math.floor(Math.random()*2);
+  const pool = EVENTS.slice();
+  for(let i=0;i<n;i++) evts.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]);
+  evts.forEach((e,i)=>setTimeout(()=>{
+    let touched = [];
+    COMPANIES.forEach(c=>{
+      const d = e.eff[c.sym];
+      if(d !== undefined){
+        let p = c.p*(1+d) * (1 + (Math.random()-.5)*c.vol*0.3);
+        c.p = Math.round(p*100)/100; c.hist.push(c.p); if(c.hist.length>40) c.hist.shift();
+        if(holdings.find(h=>h.sym===c.sym)) touched.push({c,d});
+      } else {
+        let p = c.p*(1 + (Math.random()-.5)*c.vol*0.4);
+        c.p = Math.round(p*100)/100; c.hist.push(c.p); if(c.hist.length>40) c.hist.shift();
+      }
+      c.prev = c.p;
+    });
+    feed(`<span class="tag">ACTU ${year}</span>${e.t}`, e.kind);
+    const affected = touched.some(t=>t.d<0);
+    const names = touched.length ? touched.map(t=>t.c.name+(t.d>0?" ⬆️":" ⬇️")).join(", ") : "";
+    if(!touched.length){
+      botSay("😐 Aucune de TES entreprises n'est touchée par cette actu… mais le marché bouge quand même : c'est le moment de surveiller les opportunités.");
+    } else if(affected){
+      botSay("⚠️ <b>Cet événement te touche :</b> "+names+". <b>Indice :</b> une baisse liée à une mauvaise nouvelle passagère = parfois une occasion d'acheter, pas de paniquer-vendre.", "warn");
+    } else {
+      botSay("🚀 <b>Ça joue pour toi :</b> "+names+". <b>Indice :</b> si les gains s'accumulent, pense à en sécuriser une partie en vendant un tiers.", "happy");
+    }
+    renderAll(true);
+    if(i === evts.length-1) endYear();
+  }, 900*(i+1)));
+}
+
+function endYear(){
+  const tv = total();
+  const perf = (tv/START_CASH - 1);
+  hist.push(tv);
+  feed(`📅 <b>Bilan ${year-1} → ${year}</b> : fortune ${eur(tv)} (${(perf>=0?'+':'')+(perf*100).toFixed(1)}% depuis le départ)`, perf>=0?"good":"bad");
+  showRoadmap();
+  renderAll(true);
+  botYearReview(tv, perf);
+  phase = "build";
+  document.getElementById("runBtn").disabled = false;
+}
+
+function botYearReview(tv, perf){
+  const lvl = levelAt(tv), idx = LEVELS.indexOf(lvl);
+  if(idx > lastLvlIdx){
+    lastLvlIdx = idx;
+    document.getElementById("lvlChip").classList.add("up");
+    setTimeout(()=>document.getElementById("lvlChip").classList.remove("up"), 3800);
+    toast("🎉 Palier franchi : " + lvl.name);
+    feed(`🏆 <b>Nouveau palier de fortune ! Tu deviens ${lvl.name}</b> (plafond ${eur(LEVELS[idx].floor)} franchi)`, "good");
+    botSay("🎉 <b>PROMOTION !</b> Ta fortune a dépassé "+eur(LEVELS[idx].floor)+" → tu deviens <b>"+lvl.name+"</b> ! Prochain objectif : "+eur(LEVELS[idx+1].floor)+". Mon indice pour y aller : continue de réinvestir tes gains, ce sont les <b>intérêts composés</b> qui font les fortunes.", "happy");
+  } else {
+    if(perf >= 0){
+      botSay("📈 Bonne année ("+(perf*100).toFixed(1)+"% au total). <b>Indice de coach :</b> si ta position gagnante pèse plus de 50% du portefeuille, sécurise un peu ; et réinvestis le cash dans des valeurs en repli.");
+    } else {
+      botSay("📉 Année difficile ("+(perf*100).toFixed(1)+"%). <b>Indice n°1 :</b> ne vends PAS tout dans la panique. Demande-toi : la baisse vient d'une ACTU passagère ou d'un VRAI problème de l'entreprise ? Si passagère → garde ou renforce.");
+    }
+    feed(`<span class="tag">COURS DE FINANCE</span>${LESSONS[Math.floor(Math.random()*LESSONS.length)]}`, "edu");
+  }
+}
+
+/* ====== NIVEAUX SELON LA FORTUNE (plafonds) ====== */
+function levelAt(tv){ return LEVELS.filter(l=>tv>=l.floor).pop(); }
+function showRoadmap(){
+  const tv = total(), cur = levelAt(tv), curIdx = LEVELS.indexOf(cur);
+  const nxt = LEVELS[curIdx+1];
+  document.getElementById("roadmap").innerHTML = LEVELS.map((l,i)=>{
+    const done = i <= curIdx;
+    return `<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:.85rem;${done?'':'opacity:.55'}">
+      <span>${done?'<span class="pos">✔</span> ':'🔒 '}${l.name}</span>
+      <span style="font-family:monospace;color:${done?'var(--green)':'var(--muted)'}">${eur(l.floor)}</span></div>`;
+  }).join("") + (nxt ? `<div style="margin-top:6px;font-size:.78rem;color:var(--gold)">🎯 Prochain plafond à franchir : <b>${eur(nxt.floor)}</b> (encore ${eur(Math.max(0,nxt.floor-tv))})</div>` : "");
+}
+
+/* ============ DIVERS ============ */
+function feed(html, kind){
+  const f = document.getElementById("feed");
+  const div = document.createElement("div");
+  div.className = "fline " + (kind||"");
+  div.innerHTML = html;
+  f.prepend(div);
+  while(f.children.length > 30) f.lastChild.remove();
+}
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"), 2600);
+}
+function showFact(sym){
+  const c = C(sym);
+  document.getElementById("fact").innerHTML = `<b>${c.flag} ${c.name} — pourquoi ça bouge ?</b><br>${c.fact}`;
+}
+
+function renderStats(){
+  const tv = total(), pnl = tv - START_CASH;
+  document.getElementById("cash").textContent = eur(cash);
+  document.getElementById("pv").textContent = eur(tv - cash);
+  document.getElementById("total").textContent = eur(tv);
+  const pe = document.getElementById("pnl");
+  pe.className = "val " + (pnl>=0?"pos":"neg");
+  pe.textContent = (pnl>=0?"+":"") + eur(pnl);
+  document.getElementById("year").textContent = year;
+  const lvl = levelAt(tv), idx = LEVELS.indexOf(lvl), nxt = LEVELS[idx+1];
+  document.getElementById("lvlChip").textContent = lvl.name;
+  const ratio = nxt ? (tv - lvl.floor)/(nxt.floor - lvl.floor) : 1;
+  document.getElementById("xpFill").style.width = Math.min(100, Math.max(0, ratio*100))+"%";
+  document.getElementById("xpTxt").textContent = nxt ? `→ ${eur(nxt.floor)}` : "MAX";
+}
+
+function drawBig(){
+  const cv = document.getElementById("bigchart"), x = cv.getContext("2d");
+  const w = cv.width, hgt = cv.height;
+  x.clearRect(0,0,w,hgt);
+  let s = hist.slice();
+  if(s.length < 2){
+    x.fillStyle = "#5f6f92"; x.font = "12px sans-serif";
+    x.fillText("Simule des années pour voir la courbe de ta fortune…", 18, 80); return;
+  }
+  const mn = Math.min(...s, START_CASH)*0.995, mx = Math.max(...s, START_CASH)*1.005;
+  const px = i => 14 + i*(w-28)/(s.length-1);
+  const py = v => hgt-16 - (v-mn)/((mx-mn)||1)*(hgt-34);
+  x.strokeStyle = "#c4d2ef"; x.setLineDash([5,5]); x.beginPath();
+  x.moveTo(14, py(START_CASH)); x.lineTo(w-14, py(START_CASH)); x.stroke(); x.setLineDash([]);
+  const last = s[s.length-1];
+  x.strokeStyle = last>=START_CASH ? "#0a9e5b" : "#e0245e";
+  x.lineWidth = 2.4; x.beginPath();
+  s.forEach((v,i)=> i ? x.lineTo(px(i),py(v)) : x.moveTo(px(i),py(v)));
+  x.stroke();
+  x.fillStyle = last>=START_CASH ? "#0a9e5b" : "#e0245e";
+  x.beginPath(); x.arc(px(s.length-1), py(last), 4, 0, 7); x.fill();
+  x.fillStyle = "#5f6f92"; x.font = "10px sans-serif";
+  x.fillText(fmt(mx)+" €", 8, 11); x.fillText(fmt(mn)+" €", 8, hgt-4);
+}
+
+function renderPortfolio(){
+  const dzp = document.getElementById("dropzone");
+  if(!holdings.length){
+    dzp.innerHTML = `<div class="drop-hint">👉 <b>Glisse-dépose</b> une entreprise du marché ici pour l'acheter<br>(1 000 € investis par défaut, boutons + / − pour ajuster)</div>`;
+  } else {
+    dzp.innerHTML = holdings.map((h,i)=>{
+      const c = C(h.sym);
+      const val = h.units*c.p, pl = val - h.invested;
+      return `<div class="holding" draggable="true" data-i="${i}" data-sym="${h.sym}">
+        <div class="nm">${c.flag} ${c.name}<small>investi ${eur(h.invested)} · valeur ${eur(val)}</small></div>
+        <span class="amt ${pl>=0?'pos':'neg'}">${pl>=0?'+':''}${(h.invested? pl/h.invested*100:0).toFixed(1)}%</span>
+        <button onclick="sell(holdings[${i}],false)" title="Vendre un tiers">−</button>
+        <button onclick="sell(holdings[${i}],true)" title="Tout vendre">⇪</button>
+      </div>`;
+    }).join("") + `<div class="portfolio-total">💡 Astuce : glisse une position hors du portefeuille pour la vendre d'un coup.</div>`;
+  }
+  bindDrag();
+}
+
+function renderAll(anim){
+  renderMarket(anim);
+  renderPortfolio();
+  renderStats();
+  drawBig();
+}
+
+/* ============ DRAG & DROP ============ */
+let dragSym = null;
+function bindDrag(){
+  document.querySelectorAll("#marketBody tr").forEach(tr=>{
+    tr.addEventListener("dragstart", e=>{
+      dragSym = tr.dataset.sym; tr.classList.add("dragging");
+      document.getElementById("dropzone").classList.add("over");
+    });
+    tr.addEventListener("dragend", ()=>{
+      tr.classList.remove("dragging");
+      document.getElementById("dropzone").classList.remove("over");
+    });
+  });
+  document.querySelectorAll(".holding").forEach(hd=>{
+    hd.addEventListener("dragstart", e=>{
+      dragSym = hd.dataset.sym; hd.classList.add("dragging");
+    });
+    hd.addEventListener("dragend", ()=>{
+      hd.classList.remove("dragging");
+    });
+  });
+}
+const dz = document.getElementById("dropzone");
+dz.addEventListener("dragover", e=>{ e.preventDefault(); dz.classList.add("over"); });
+dz.addEventListener("dragleave", ()=> dz.classList.remove("over"));
+dz.addEventListener("drop", e=>{
+  e.preventDefault(); dz.classList.remove("over");
+  if(dragSym) buy(dragSym, 1000);
+  dragSym = null;
+});
+const market = document.querySelector("#marketBody");
+market.addEventListener("dragover", e=>{
+  if(dragSym && holdings.find(h=>h.sym===dragSym)){ e.preventDefault(); }
+});
+market.addEventListener("drop", e=>{
+  e.preventDefault();
+  const h = holdings.find(x=>x.sym===dragSym);
+  if(h) sell(h, true);
+  dragSym = null;
+});
+
+function resetGame(){
+  cash = START_CASH; year = 2026; hist = [START_CASH]; holdings = []; lastLvlIdx = 0;
+  COMPANIES.forEach(c=>{ c.p = c.start; c.prev = c.start; c.hist = [c.start]; });
+  document.getElementById("feed").innerHTML = `<div class="fline edu"><span class="tag">Nouvelle partie</span>Tu repars de zéro avec <b>20 000 €</b>. Cette fois, écoute BULL-E et diversifie 🌍</div>`;
+  botSay("🤖 Nouvelle partie ! <b>Stratégie gagnante recommandée :</b> 3 positions (1 défensive + 1 dynamique + 1 dividende), garde ~20% de cash, et simule année après année.", "happy");
+  showRoadmap(); renderAll();
+}
+
+/* ============ INIT ============ */
+COMPANIES.forEach(c=>{ c.prev = c.start; c.hist = [c.start, c.start*(1+c.trend)]; });
+showRoadmap();
+showFact("NVDA");
+renderAll();
+
+/* micro-mouvements de marché continu */
+setInterval(()=>{
+  if(phase !== "build") return;
+  COMPANIES.forEach(c=>{
+    c.p = Math.round(c.p * (1 + (Math.random()-.5)*c.vol*0.03) * 100)/100;
+    c.prev = c.p;
+  });
+  renderAll(true);
+}, 2600);
+</script>
+</body>
+</html>

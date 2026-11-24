@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Bourse — Cours récents & actualité</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2333; --border:#2d333b;
+    --txt:#e6edf3; --muted:#8b949e; --green:#3fb950; --red:#f85149; --gold:#e3b341; --blue:#58a6ff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font-family:'Segoe UI',system-ui,-apple-system,sans-serif}
+  .wrap{max-width:1100px;margin:0 auto;padding:16px}
+  h1{font-size:1.5rem;margin:0 0 4px}
+  .sub{color:var(--muted);font-size:.85rem;margin-bottom:16px}
+  .dashboard{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+  .card .lbl{color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.5px}
+  .card .val{font-size:1.35rem;font-weight:700;margin-top:4px}
+  .pos{color:var(--green)} .neg{color:var(--red)}
+  .cols{display:grid;grid-template-columns:1.6fr 1fr;gap:16px}
+  @media(max-width:820px){.cols{grid-template-columns:1fr}}
+  table{width:100%;border-collapse:collapse;font-size:.88rem}
+  th{color:var(--muted);text-align:left;font-weight:600;font-size:.72rem;text-transform:uppercase;padding:8px 6px;border-bottom:1px solid var(--border)}
+  td{padding:8px 6px;border-bottom:1px solid #21262d}
+  tr:hover td{background:#1a2130}
+  .price{font-variant-numeric:tabular-nums;font-weight:600}
+  .flash-up{animation:fup .8s} .flash-down{animation:fdn .8s}
+  @keyframes fup{0%{background:rgba(63,185,80,.35)}100%{background:transparent}}
+  @keyframes fdn{0%{background:rgba(248,81,73,.35)}100%{background:transparent}}
+  button{cursor:pointer;border:none;border-radius:6px;padding:6px 12px;font-size:.8rem;font-weight:600}
+  .buy{background:#238636;color:#fff} .sell{background:#b62324;color:#fff}
+  .buy:hover{background:#2ea043} .sell:hover{background:#da3633}
+  .event{background:#8957e5;color:#fff;padding:10px 16px;font-size:.9rem}
+  .event:hover{background:#a371f7}
+  .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+  .news{background:var(--panel2);border-left:3px solid var(--gold);padding:10px 12px;border-radius:0 8px 8px 0;margin-top:10px;font-size:.85rem;line-height:1.5}
+  .news b{color:var(--gold)}
+  .news ul{margin:6px 0 0;padding-left:18px}
+  canvas{width:100%;height:120px;background:var(--panel);border:1px solid var(--border);border-radius:10px;margin-bottom:16px}
+  .qty{width:52px;background:#0d1117;color:var(--txt);border:1px solid var(--border);border-radius:6px;padding:5px}
+  .pill{display:inline-block;padding:2px 8px;border-radius:99px;font-size:.72rem;font-weight:700}
+  .pill.g{background:rgba(63,185,80,.15);color:var(--green)}
+  .pill.r{background:rgba(248,81,73,.15);color:var(--red)}
+  .disc{color:var(--muted);font-size:.72rem;margin-top:20px;line-height:1.5}
+  .held{background:var(--panel2)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>📈 Simulateur Bourse</h1>
+  <div class="sub">Cours de départ = dernières cotations réelles connues (23 nov., source Coin Academy) · Les mouvements ensuite sont une simulation aléatoire calibrée sur la volatilité réelle de chaque action · Argent fictif : <b>10 000 €</b></div>
+
+  <div class="toolbar">
+    <button class="event" onclick="triggerEvent()">⚡ Déclencher un événement d'actualité</button>
+    <label style="font-size:.8rem;color:var(--muted)"><input type="checkbox" id="autoEv" checked> Événements automatiques toutes les ~20 s</label>
+  </div>
+
+  <div class="dashboard">
+    <div class="card"><div class="lbl">Cash disponible</div><div class="val" id="cash"></div></div>
+    <div class="card"><div class="lbl">Valeur du portefeuille</div><div class="val" id="pv"></div></div>
+    <div class="card"><div class="lbl">Plus / moins-value</div><div class="val" id="pnl"></div></div>
+    <div class="card"><div class="lbl">Performance</div><div class="val" id="perf"></div></div>
+  </div>
+
+  <canvas id="chart" width="1080" height="120"></canvas>
+
+  <div class="cols">
+    <div>
+      <table>
+        <thead><tr><th>Entreprise</th><th>Cours</th><th>Variation</th><th>Qté</th><th>Acheter</th><th>Vendre</th></tr></thead>
+        <tbody id="market"></tbody>
+      </table>
+    </div>
+    <div>
+      <table>
+        <thead><tr><th>Portefeuille</th><th>Qté</th><th>PRU</th><th>Valeur</th><th>P/L</th></tr></thead>
+        <tbody id="portfolio"></tbody>
+      </table>
+      <div class="news" id="newsBox"><b>📰 Contexte du jour (vraie actu):</b>
+        <ul>
+          <li>Fort <b>repli des valeurs tech / IA</b> : NVIDIA -14%, Broadcom -12%, AMD -13%, Meta -5,9% sur la dernière séance.</li>
+          <li><b>NVIDIA</b> : Jensen Huang rétabli CEO, rebond massif (+31%) puis nouvelle grosse volatilité.</li>
+          <li><b>Pétrole</b> : le baril glisse (~-4%) → pression sur <b>TotalEnergies</b> (-1,4%).</li>
+          <li><b>CAC 40</b> légèrement en retrait ; LVMH, Hermès et le luxe reculent (-1 à -4%).</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="disc">⚠️ Simulation pédagogique à argent fictif. Les cours de départ sont des cotations publiques récentes ; l'évolution ensuite est aléatoire (marche aléatoire biaisée par la tendance actuelle de chaque valeur). Ne constitue pas un conseil en investissement.</div>
+</div>
+
+<script>
+const STOCKS = [
+  {sym:"NVDA", name:"NVIDIA",            p:114.20,  drift:-0.010, vol:0.030, bias:"repli IA très volatil, rebonds violents possibles"},
+  {sym:"AAPL", name:"Apple",             p:311.63,  drift:-0.002, vol:0.012, bias:"défensive relative"},
+  {sym:"MSFT", name:"Microsoft",         p:440.77,  drift:-0.003, vol:0.015, bias:"baisse tech modérée"},
+  {sym:"GOOGL",name:"Alphabet (Google)", p:241.34,  drift:-0.003, vol:0.016, bias:"pub + IA"},
+  {sym:"AMZN", name:"Amazon",            p:224.53,  drift:-0.004, vol:0.018, bias:"consommation + cloud"},
+  {sym:"META", name:"Meta Platforms",    p:510.20,  drift:-0.005, vol:0.022, bias:"capex IA critiqué"},
+  {sym:"TSLA", name:"Tesla",             p:314.68,  drift:-0.006, vol:0.030, bias:"très volatile"},
+  {sym:"MC",   name:"LVMH",              p:381.95,  drift:-0.002, vol:0.012, bias:"luxe en repli"},
+  {sym:"AIR",  name:"Airbus",            p:189.96,  drift:-0.000, vol:0.014, bias:"industriel stable"},
+  {sym:"TTE",  name:"TotalEnergies",     p:78.19,   drift:-0.001, vol:0.011, bias:"suit le pétrole à la baisse"},
+];
+const EVENTS = [
+  {t:"NVIDIA : Jensen Huang confirme en conférence que la demande de puces IA « dépasse l'offre »", eff:{NVDA:+0.12, AVGO:0, TSLA:+0.03}},
+  {t:"Rumeur de ralentissement des commandes data-center : panique sur les valeurs IA", eff:{NVDA:-0.14, META:-0.06, MSFT:-0.04, AMZN:-0.04}},
+  {t:"Résultats trimestriels d'Apple meilleur que prévu, nouveau record de services", eff:{AAPL:+0.08}},
+  {t:"Le pétrole chute de 5% (offre abondante) : TotalEnergies sous pression", eff:{TTE:-0.06}},
+  {t:"Le pétrole rebondit +4% après des coupures de production", eff:{TTE:+0.06}},
+  {t:"Ventes du luxe en Chine en repli : LVMH et Hermès sanctionnés", eff:{MC:-0.05}},
+  {t:"Mega-commande aérienne annoncée en Asie : Airbus décolle", eff:{AIR:+0.07}},
+  {t:"Tesla annonce une voiture autonome bon marché pour 2027", eff:{TSLA:+0.15}},
+  {t:"Régulateurs européens visent les pubs de Meta : amende envisagée", eff:{META:-0.08}},
+  {t:"Microsoft : Azure accélère grâce à l'IA, guidance relevée", eff:{MSFT:+0.09, NVDA:+0.04}},
+  {t:"Amazon Prime Days battent tous les records", eff:{AMZN:+0.08}},
+  {t:"Rassurance macro : la banque centrale laisse entrevoir des baisses de taux", eff:{AAPL:+0.04, MC:+0.04, AMZN:+0.04, MSFT:+0.04, NVDA:+0.06, GOOGL:+0.04, META:+0.04, TSLA:+0.04, AIR:+0.03, TTE:+0.01}},
+];
+
+let cash = 10000, hist = [];
+const DEPOT = 10000;
+const S = STOCKS.map(s => ({...s, open:s.p, prev:s.p, qty:0, pru:0, hist:[s.p]}));
+
+const fmt = n => n.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const eur = n => fmt(n)+' €';
+
+function portValue(){ return cash + S.reduce((a,s)=>a+s.qty*s.p,0); }
+
+function tick(){
+  S.forEach(s=>{
+    const shock = (Math.random()*2-1) * s.vol * 0.25;
+    let p = s.p * (1 + s.drift*0.02 + shock);
+    if(p < s.open*0.6) p = s.p*(1+Math.abs(shock));
+    s.prev = s.p; s.p = Math.round(p*100)/100;
+    s.hist.push(s.p); if(s.hist.length>120) s.hist.shift();
+  });
+  render(true);
+}
+
+function triggerEvent(){
+  const e = EVENTS[Math.floor(Math.random()*EVENTS.length)];
+  let lines = [`<b>${e.t}</b>`];
+  S.forEach(s=>{
+    const d = e.eff[s.sym];
+    if(d !== undefined){
+      s.p = Math.round(s.p*(1+d)*100)/100;
+      s.hist.push(s.p);
+      lines.push(`${s.name} : <span class="${d>0?'pos':'neg'}">${(d*100).toFixed(0)}%</span>`);
+    }
+  });
+  document.getElementById('newsBox').innerHTML = `<b>📰 Événement :</b><ul><li>${lines.join('</li><li>')}</li></ul>`;
+  render(false);
+}
+
+function trade(sym, dir){
+  const s = S.find(x=>x.sym===sym);
+  const q = parseInt(document.getElementById('q_'+sym).value)||0;
+  if(q<=0) return;
+  if(dir>0){
+    const cost = q*s.p;
+    if(cost>cash){ alert('Cash insuffisant ('+eur(cost)+' nécessaires)'); return; }
+    cash -= cost;
+    s.pru = (s.pru*s.qty + cost)/(s.qty+q);
+    s.qty += q;
+  } else {
+    if(q>s.qty){ alert('Tu ne possèdes que '+s.qty+' titre(s)'); return; }
+    cash += q*s.p;
+    s.qty -= q;
+    if(s.qty===0) s.pru = 0;
+  }
+  render(false);
+}
+
+function render(animate){
+  const pv = portValue();
+  const pnl = pv - DEPOT;
+  document.getElementById('cash').textContent = eur(cash);
+  document.getElementById('pv').textContent = eur(pv);
+  const pe = document.getElementById('pnl');
+  pe.className = 'val '+(pnl>=0?'pos':'neg');
+  pe.textContent = (pnl>=0?'+':'')+eur(pnl);
+  const pf = document.getElementById('perf');
+  pf.className = 'val '+(pnl>=0?'pos':'neg');
+  pf.textContent = ((pnl/DEPOT)*100).toFixed(2)+' %';
+
+  document.getElementById('market').innerHTML = S.map(s=>{
+    const chg = (s.p/s.open-1)*100, d24 = (s.p/s.prev-1)*100;
+    const cls = d24>=0?'pos':'neg', fc = animate&&d24>0.01?'flash-up':(animate&&d24<-0.01?'flash-down':'');
+    return `<tr class="${s.qty>0?'held':''} ${fc}">
+      <td><b>${s.name}</b><br><span style="color:var(--muted);font-size:.72rem">${s.sym}</span></td>
+      <td class="price">${eur(s.p)}</td>
+      <td><span class="pill ${chg>=0?'g':'r'}">${chg>=0?'+':''}${chg.toFixed(2)}%</span></td>
+      <td>${s.qty}</td>
+      <td><input class="qty" id="q_${s.sym}" type="number" min="1" value="1"><br>
+          <button class="buy" onclick="trade('${s.sym}',1)">Acheter</button></td>
+      <td><button class="sell" onclick="trade('${s.sym}',-1)">Vendre</button>
+          ${s.qty>0?`<button class="sell" style="background:#5a1d1c" onclick="sellAll('${s.sym}')">Tout</button>`:''}</td>
+    </tr>`;
+  }).join('');
+
+  const held = S.filter(s=>s.qty>0);
+  document.getElementById('portfolio').innerHTML = held.length ? held.map(s=>{
+    const v = s.qty*s.p, pl = v - s.qty*s.pru, cl = pl>=0?'pos':'neg';
+    return `<tr class="held"><td><b>${s.name}</b></td><td>${s.qty}</td>
+      <td>${eur(s.pru)}</td><td>${eur(v)}</td>
+      <td class="${cl}">${(pl>=0?'+':'')+eur(pl)}</td></tr>`;
+  }).join('') : '<tr><td colspan="5" style="color:var(--muted)">Aucune position. Achète ta première action !</td></tr>';
+
+  drawChart();
+}
+
+function sellAll(sym){
+  const s = S.find(x=>x.sym===sym);
+  const q = s.qty; if(q>0){ document.getElementById('q_'+sym).value = 1; }
+  s.qty = q; cash += q*s.p; s.qty = 0; s.pru = 0; render(false);
+}
+
+function drawChart(){
+  const c = document.getElementById('chart'), x = c.getContext('2d');
+  x.clearRect(0,0,c.width,c.height);
+  const comp = portValue(); hist.push(comp); if(hist.length>150) hist.shift();
+  let series = hist.slice(); 
+  if(hist.length<2){ 
+    x.fillStyle = '#8b949e'; x.font = '13px sans-serif';
+    x.fillText('Évolution de la valeur totale du portefeuille (les points apparaissent au fil des secondes)…',20,65);
+    return;
+  }
+  const mn = Math.min(...series)*0.999, mx = Math.max(...series)*1.001;
+  const px = i => 10 + i*(c.width-20)/(series.length-1);
+  const py = v => c.height-15 - (v-mn)/(mx-mn||1)*(c.height-30);
+  x.strokeStyle = series[series.length-1]>=DEPOT ? '#3fb950' : '#f85149';
+  x.lineWidth = 2; x.beginPath();
+  series.forEach((v,i)=> i?x.lineTo(px(i),py(v)):x.moveTo(px(i),py(v)));
+  x.stroke();
+  x.strokeStyle = '#30363d'; x.setLineDash([4,4]); x.lineWidth = 1;
+  x.beginPath(); x.moveTo(10,py(DEPOT)); x.lineTo(c.width-10,py(DEPOT)); x.stroke();
+  x.setLineDash([]);
+  x.fillStyle = '#8b949e'; x.font = '11px sans-serif';
+  x.fillText(eur(mx),10,12); x.fillText(eur(mn),10,c.height-4);
+}
+
+setInterval(tick, 2000);
+let lastEv = Date.now();
+setInterval(()=>{
+  if(document.getElementById('autoEv').checked && Date.now()-lastEv > 14000+Math.random()*12000){
+    lastEv = Date.now(); triggerEvent();
+  }
+}, 3000);
+render(false);
+</script>
+</body>
+</html>

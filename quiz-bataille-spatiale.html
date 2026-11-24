@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MISSION BOURSE ⭐ Quiz spatial du pilote financier</title>
+<style>
+  :root{
+    --bg:#040614; --panel:#ffffff; --panel2:#f6f9ff; --line:#dbe4f5;
+    --txt:#17223b; --muted:#5f6f92;
+    --green:#0a9e5b; --red:#e0245e; --gold:#c77700; --blue:#2563eb; --purple:#7c3aed;
+    --shadow:0 4px 18px rgba(37,99,235,.09), 0 1px 3px rgba(23,34,59,.07);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:radial-gradient(1100px 520px at 80% -10%, rgba(37,99,235,.14), transparent 60%), var(--bg);
+    color:var(--txt); font-family:'Segoe UI',system-ui,-apple-system,sans-serif; min-height:100vh}
+
+  .screen{display:none;max-width:1080px;margin:0 auto;padding:24px 16px 60px}
+  .screen.on{display:block}
+
+  #screenStart{min-height:88vh;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+  #screenStart.on{display:flex}
+  .title{font-family:ui-monospace,Consolas,monospace;font-size:clamp(1.9rem,5vw,3.2rem);font-weight:900;letter-spacing:3px;color:#fff;text-shadow:0 0 24px rgba(77,159,255,.9),0 0 60px rgba(124,58,237,.5)}
+  .title b{color:var(--gold);text-shadow:0 0 30px rgba(255,197,61,.9)}
+  .subtitle{color:#9fb0d8;margin:14px 0 6px;font-size:1.02rem;max-width:640px;line-height:1.7}
+  .mission{background:rgba(255,255,255,.06);border:1px solid rgba(124,156,255,.35);border-radius:16px;padding:16px 22px;max-width:660px;color:#cfe0ff;font-size:.92rem;line-height:1.75;margin-top:14px}
+  .mission b{color:var(--gold)} .mission .k{color:#7ee2ff}
+  .btn-big{margin-top:26px;background:linear-gradient(90deg,#2563eb,#7c3aed);color:#fff;border:none;border-radius:14px;padding:17px 46px;font-size:1.1rem;font-weight:800;letter-spacing:2px;cursor:pointer;box-shadow:0 10px 34px rgba(124,58,237,.45);animation:breathe 2.4s ease-in-out infinite}
+  .btn-big:hover{filter:brightness(1.15)}
+  @keyframes breathe{50%{transform:scale(1.04);box-shadow:0 10px 44px rgba(124,58,237,.65)}}
+  .pipo{margin-top:20px;font-size:2.6rem;animation:fly 3.2s ease-in-out infinite}
+  @keyframes fly{0%,100%{transform:translateX(-14px) rotate(-6deg)}50%{transform:translateX(14px) rotate(6deg)}}
+
+  .hud{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:10px}
+  @media(max-width:700px){.hud{grid-template-columns:1fr}}
+  .bar-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 14px;box-shadow:var(--shadow)}
+  .bar-card .lbl{display:flex;justify-content:space-between;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted)}
+  .bar{height:14px;background:#e7edf8;border-radius:99px;overflow:hidden;margin-top:6px}
+  .bar>div{height:100%;border-radius:99px;transition:width .5s,background .5s}
+  .bar.alien>div{background:linear-gradient(90deg,#e0245e,#7c3aed)}
+  .bar.pilot>div{background:linear-gradient(90deg,#0a9e5b,#22d68a)}
+  .bar.pilot.low>div{background:linear-gradient(90deg,#c77700,#e0245e);animation:blink 1s infinite}
+  @keyframes blink{50%{opacity:.55}}
+  canvas.space{width:100%;border-radius:16px;display:block;box-shadow:0 14px 44px rgba(37,99,235,.28);border:1px solid rgba(124,156,255,.3)}
+  .streak{position:absolute;top:14px;left:50%;transform:translateX(-50%);background:#fff;color:var(--gold);border:1px solid var(--gold);font-weight:800;border-radius:99px;padding:5px 16px;font-size:.8rem;box-shadow:var(--shadow);opacity:0;transition:opacity .3s}
+  .streak.on{opacity:1}
+  .battlezone{position:relative}
+
+  .q-head{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:18px 0 12px}
+  .q-badge{background:var(--panel);border:1px solid var(--line);border-radius:99px;padding:5px 14px;font-size:.74rem;font-weight:800;color:var(--blue);box-shadow:var(--shadow)}
+  .q-badge.gold{color:var(--gold);border-color:var(--gold)}
+  .q-badge.red{color:var(--red);border-color:var(--red)}
+  .q-count{margin-left:auto;font-family:ui-monospace,Consolas,monospace;color:#9fb0d8;font-size:.8rem}
+  .qcard{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:var(--shadow)}
+  .qcard h3{font-size:1.12rem;line-height:1.55;margin-bottom:16px}
+  .opt{display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;background:var(--panel2);border:2px solid var(--line);border-radius:12px;padding:13px 15px;margin-top:10px;font-size:.95rem;cursor:pointer;transition:.18s;color:var(--txt)}
+  .opt:hover:not(:disabled){border-color:var(--blue);background:#eef4ff;transform:translateX(5px)}
+  .opt:disabled{cursor:default;opacity:.75}
+  .opt .key{flex:none;width:26px;height:26px;border-radius:8px;background:#fff;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.78rem;color:var(--muted)}
+  .opt.good{border-color:var(--green);background:#eafcf3;opacity:1}
+  .opt.good .key{background:var(--green);color:#fff;border-color:var(--green)}
+  .opt.bad{border-color:var(--red);background:#fdeef3;opacity:1}
+  .opt.bad .key{background:var(--red);color:#fff;border-color:var(--red)}
+  .opt.shakey{animation:shk .45s}
+  @keyframes shk{20%{transform:translateX(-8px)}45%{transform:translateX(7px)}70%{transform:translateX(-5px)}90%{transform:translateX(3px)}}
+  .explain{display:none;margin-top:16px;background:linear-gradient(135deg,rgba(124,58,237,.06),rgba(37,99,235,.05));border:1px solid rgba(37,99,235,.25);border-left:4px solid var(--purple);border-radius:12px;padding:13px 16px;font-size:.9rem;line-height:1.7;animation:slidein .4s}
+  .explain.on{display:block}
+  .explain .tag{font-weight:800;color:var(--purple);font-size:.68rem;letter-spacing:1.5px;text-transform:uppercase}
+  .nextbtn{display:none;margin-top:18px;background:linear-gradient(90deg,#0a9e5b,#22d68a);color:#fff;border:none;border-radius:12px;padding:14px 30px;font-size:.95rem;font-weight:800;letter-spacing:1px;cursor:pointer;box-shadow:0 6px 20px rgba(10,158,91,.3);animation:breathe 2s infinite}
+  .nextbtn.on{display:inline-block}
+  @keyframes slidein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  #screenEnd{min-height:88vh;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+  #screenEnd.on{display:flex}
+  .end-title{font-size:clamp(1.8rem,5vw,2.8rem);font-weight:900;letter-spacing:2px}
+  .end-title.win{color:#fff;text-shadow:0 0 30px rgba(255,197,61,.9)}
+  .end-title.lose{color:#ff9db6;text-shadow:0 0 30px rgba(224,36,94,.7)}
+  .end-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;max-width:640px;width:100%;margin-top:24px}
+  .end-stats .card{background:rgba(255,255,255,.07);border:1px solid rgba(124,156,255,.3);color:#dfe9ff;border-radius:14px;padding:14px}
+  .end-stats .card .lbl{color:#8ea3d4;font-size:.68rem;text-transform:uppercase;letter-spacing:1.5px}
+  .end-stats .card .val{font-size:1.5rem;font-weight:900;margin-top:4px;color:#fff}
+  .end-msg{max-width:620px;color:#cfe0ff;line-height:1.75;font-size:.95rem;margin-top:20px}
+  .disc{color:#61719a;font-size:.7rem;line-height:1.6;margin-top:26px;text-align:center}
+</style>
+</head>
+<body>
+
+<div class="screen on" id="screenStart">
+  <div class="pipo">🚀</div>
+  <div class="title">MISSION <b>BOURSE</b> ⭐</div>
+  <div class="subtitle">Le quiz de finances pour les élèves de <b>Terminale</b> : 30 questions. Chaque bonne réponse arme ton attaque, chaque erreur affaiblit ton chasseur…<br>Le destin du marché galactique est entre tes mains.</div>
+  <div class="mission">
+    🛸 <b>PROTOCOLE : ZORG</b>, un alien rampant, veut plonger la galaxie dans la manipulation de marché et les promesses frauduleuses.<br>
+    ✈️ Toi, <b>PILOTE CAPITAINE</b>, chaque <b>bonne réponse</b> = un laser sur ZORG 💥<br>
+    😖 Chaque <b>mauvaise réponse</b> = ZORG riposte et tu perds <b>20 points de force de frappe</b> ⚠️<br>
+    🏁 Fais chuter les PV de ZORG à <b class="k">0</b> avant de perdre toute ta force !<br>
+    ⌨️ Astuce : réponds au clavier avec les touches <b>1</b>, <b>2</b>, <b>3</b>, <b>4</b>
+  </div>
+  <button class="btn-big" onclick="startGame()">🚀 LANCER LA MISSION</button>
+  <div class="disc">Quiz pédagogique (finance / SES niveau Terminale). Aucun conseil en investissement.</div>
+</div>
+
+<div class="screen" id="screenBattle">
+  <div class="hud">
+    <div class="bar-card">
+      <div class="lbl"><span>✈️ CAPITAINE — Force de frappe</span><span id="pwTxt">100</span></div>
+      <div class="bar pilot" id="pwBar"><div style="width:100%"></div></div>
+    </div>
+    <div class="bar-card">
+      <div class="lbl"><span>👾 ZORG — Points de vie</span><span id="hpTxt">100</span></div>
+      <div class="bar alien"><div id="hpFill" style="width:100%"></div></div>
+    </div>
+  </div>
+  <div class="battlezone">
+    <canvas class="space" id="space" width="1120" height="460"></canvas>
+    <div class="streak" id="streak">🔥 Série de bonnes réponses ×2</div>
+  </div>
+</div>
+
+<div class="screen" id="screenQuiz">
+  <div class="q-head">
+    <div class="q-badge gold" id="badgeScore">💥 Dégâts : 0</div>
+    <div class="q-badge" id="badgeStreak">🔥 Série : 0</div>
+    <div class="q-badge red" id="badgePower">⚡ Force : 100</div>
+    <div class="q-count" id="qCount">Question 1/30</div>
+  </div>
+  <div class="qcard">
+    <h3 id="qText"></h3>
+    <div id="opts"></div>
+    <div class="explain" id="explain"></div>
+    <button class="nextbtn" id="attackBtn" onclick="afterAnswer()">⚡ ENVOYER L'ATTAQUE !</button>
+  </div>
+  <div class="disc" id="quizDisc">⌨️ Raccourcis : touches 1-4 (répondre) · Entrée (attaquer / continuer)</div>
+</div>
+
+<div class="screen" id="screenEnd">
+  <div class="end-title" id="endTitle"></div>
+  <div class="end-stats" id="endStats"></div>
+  <div class="end-msg" id="endMsg"></div>
+  <button class="btn-big" onclick="startGame()">🚀 REJOUER</button>
+</div>
+
+<script>
+"use strict";
+
+/* ============ QUESTIONS (30) — niveau Terminale, finance ============ */
+const QUESTIONS = [
+  {q:"Qu'est-ce qu'une action en bourse ?", o:["Un prêt remboursé à l'entreprise","Une part de propriété d'une entreprise cotée","Une pièce de collection rare","Un livret d'épargne garanti par l'État"], a:1,
+   e:"Acheter une action = devenir co-propriétaire de l'entreprise. Si elle prospère, la valeur de ta part monte, et tu peux recevoir des dividendes."},
+  {q:"Un dividende, c'est :", o:["Une taxe versée à l'État","Un impôt sur les sociétés","Une somme d'argent versée aux actionnaires par l'entreprise","Le salaire du PDG"], a:2,
+   e:"L'entreprise distribue une partie de ses bénéfices à ses propriétaires (les actionnaires). C'est un revenu en plus de la hausse du cours."},
+  {q:"La capitalisation boursière d'une entreprise, c'est :", o:["Le montant sur son compte en banque","Ses dettes envers ses fournisseurs","La valeur totale de l'entreprise en bourse (cours × nombre d'actions)","Son chiffre d'affaires annuel"], a:2,
+   e:"C'est le prix de toutes les actions multiplié par leur cours : la « valeur de marché » de l'entreprise entière."},
+  {q:"Le CAC 40, c'est :", o:["Le nom du palais de la Bourse de Paris","Un impôt français de 4,0 %","Les 40 plus grandes entreprises cotées à la Bourse de Paris","Un club privé de 40 traders"], a:2,
+   e:"C'est l'indice phare de Paris qui regroupe les 40 plus grosses capitalisations : LVMH, TotalEnergies, Airbus, L'Oréal, etc."},
+  {q:"Si tu achètes une obligation, tu es :", o:["Propriétaire de l'entreprise","Un créancier : tu prêtes de l'argent à l'entreprise ou à l'État","Un fournisseur privilégié de l'entreprise","Un inspecteur des impôts"], a:1,
+   e:"Action = propriétaire, obligation = prêteur. Avec une obligation, tu reçois des intérêts mais tu ne possèdes rien de l'entreprise."},
+  {q:"Règle d'or en finance :", o:["Un placement risqué est toujours une mauvaise idée","Plus tu veux un rendement élevé, plus tu dois accepter un risque élevé","Certaines entreprises ne présentent aucun risque","Il faut toujours prêter son argent à ses amis"], a:1,
+   e:"Risque et rendement sont les deux faces d'une même pièce. Personne ne peut garantir un rendement élevé sans risque : méfiance face aux promesses miracles !"},
+  {q:"Les « intérêts composés », c'est :", o:["Des intérêts interdits par la loi","Des intérêts qui rapportent à leur tour des intérêts (effet boule de neige)","Une taxe sur les placements","Un bonus offert par la banque"], a:1,
+   e:"100 € à 10 % par an = 110 €, puis 121 €, puis 133 €… L'argent travaillé génère lui-même des gains. Les grandes fortunes se construisent ainsi, sur le long terme."},
+  {q:"Pourquoi diversifier son portefeuille ?", o:["Pour payer moins d'impôts","Pour impressionner son banquier","Pour ne pas tout perdre si une seule entreprise s'effondre","Pour gagner à tous les coups"], a:2,
+   e:"« Ne jamais mettre tous ses œufs dans le même panier » : si une entreprise plonge, les autres compensent. C'est la stratégie n°1 des gérants professionnels."},
+  {q:"Si une entreprise cotée fait faillite, l'actionnaire :", o:["Doit rembourser toutes les dettes avec ses biens personnels","Peut perdre au maximum la somme investie (responsabilité limitée)","Devient propriétaire du siège social","Rien : l'État rembourse les actionnaires"], a:1,
+   e:"En société cotée (SA), la responsabilité est limitée : tu ne peux pas perdre plus que ce que tu as investi."},
+  {q:"L'inflation, c'est :", o:["La hausse générale des prix qui érode le pouvoir d'achat","Une action qui monte vite","Une grande marée","Un impôt sur les yachts"], a:0,
+   e:"Si l'inflation est à 5 % et ton épargne rapporte 1 %, tu perds du pouvoir d'achat ! C'est pour ça que certains investissent : faire battre l'inflation."},
+  {q:"Quand l'économie ralentit trop, la banque centrale peut :", o:["Interdire la bourse","Augmenter massivement les impôts","Baisser ses taux directeurs pour encourager le crédit et l'investissement","Imprimer des pièces d'or"], a:2,
+   e:"Des taux bas rendent le crédit moins cher : les entreprises investissent, les ménages consomment. À l'inverse, en cas de forte inflation, les taux remontent et la bourse souffre."},
+  {q:"Différence entre chiffre d'affaires et bénéfice :", o:["Aucune, c'est pareil","Le CA est ce que l'entreprise gagne en vendant, le bénéfice ce qu'il reste après avoir payé toutes les dépenses","Le bénéfice est ce que paient les clients","Le CA concerne uniquement l'État"], a:1,
+   e:"CA − charges = bénéfice. Une entreprise peut faire des millions de CA et perdre de l'argent : c'est le BÉNÉFICE que regardent les analystes."},
+  {q:"Une plus-value, c'est :", o:["Un impôt sur les sociétés","Une perte constatée en bourse","Un gain réalisé quand tu revends plus cher que ton prix d'achat","Un dividende spécial"], a:2,
+   e:"Acheté à 100 €, revendu à 150 € → 50 € de plus-value. À l'inverse, une moins-value = une perte. Les moins-values peuvent parfois réduire l'impôt sur tes plus-values."},
+  {q:"Un courtier (broker), c'est :", o:["Un agent immobilier","Un intermédiaire qui passe tes ordres d'achat/vente en bourse","Un contrôleur fiscal","Le gardien du palais de la bourse"], a:1,
+   e:"Toi ↔ courtier ↔ bourse. Bourse Direct, Boursorama, Degiro… sont des courtiers qui exécutent tes ordres, souvent pour quelques euros par transaction."},
+  {q:"NVIDIA fabrique des puces d'IA et annonce que « la demande explose ». En temps normal, son cours de bourse :", o:["Chute, car l'activité fatigue les employés","Monte, car des revenus plus élevés sont attendus","Ne bouge jamais en fonction des résultats","Devient une obligation"], a:1,
+   e:"La bourse est tournée vers le FUTUR : si les gains futurs s'annoncent plus élevés, le cours monte. Attention, une déception fait l'inverse, parfois violemment !"},
+  {q:"Le PEA (Plan d'Épargne en Actions), en France, sert à :", o:["Acheter des actions européennes en profitant d'un avantage fiscal après 5 ans de détention","Louer son appartement","Acheter uniquement des obligations d'État","Ouvrir un compte à l'étranger"], a:0,
+   e:"Le PEA permet d'acheter des actions européennes et, après 5 ans, de payer moins d'impôt sur les gains. Un outil long terme très utilisé par les épargnants français."},
+  {q:"À quoi sert une bourse ?", o:["À organiser la rencontre entre entreprises qui cherchent des financements et investisseurs qui apportent de l'argent","À fixer le prix du pain","À vendre des voitures d'occasion","À prêter de l'argent aux banques"], a:0,
+   e:"La bourse est une place de marché : les entreprises s'y financent en vendant des actions, les investisseurs y achètent des parts de l'économie réelle."},
+  {q:"Une introduction en bourse (IPO), c'est :", o:["La fermeture d'une entreprise","La première mise en vente des actions d'une entreprise au grand public","Un licenciement collectif","Un emprunt immobilier"], a:1,
+   e:"Lors d'une IPO, l'entreprise « entre en bourse » : elle vend pour la première fois des actions au public pour lever des fonds. Les banques d'affaires organisent ces opérations."},
+  {q:"Pourquoi une entreprise décide-t-elle d'entrer en bourse ?", o:["Pour lever des fonds et financer sa croissance","Pour payer moins de salaires","Pour échapper à toutes les règles","Pour faire de la publicité gratuite uniquement"], a:0,
+   e:"En vendant des actions, l'entreprise obtient de l'argent frais pour investir (usines, recherche, acquisitions) sans emprunter — en échange, elle doit publier ses comptes et rendre compte au marché."},
+  {q:"Un ETF (fonds indiciel coté), c'est :", o:["Un panier d'actions qui réplique un indice entier (ex. CAC 40) en un seul produit","Une seule action ultra risquée","Une crypto-monnaie","Un livret bancaire"], a:0,
+   e:"En achetant une part d'ETF CAC 40, tu détiens en un clic les 40 entreprises de l'indice : une diversification instantanée, très populaire chez les jeunes investisseurs."},
+  {q:"La volatilité d'une action mesure :", o:["Son nombre d'employés","L'amplitude de ses variations de cours (son instabilité)","Le loyer de son siège social","La vitesse de fabrication de ses produits"], a:1,
+   e:"Une action très volatile monte et descend fort (ex. Tesla ou NVIDIA). Une action peu volatile bouge doucement (ex. L'Oréal). Plus de volatilité = plus de risque… et plus de stress."},
+  {q:"Une bulle spéculative, c'est :", o:["Un chewing-gum financier","Quand le prix d'un actif grimpe bien au-delà de sa vraie valeur, avant de s'effondrer","Un contrat d'assurance","Interdit en bourse"], a:1,
+   e:"Exemples célèbres : la bulle Internet (2000), la bulle immobilière américaine (2007). Les prix montent par simple euphorie… jusqu'à l'éclatement brutal."},
+  {q:"Un krach boursier, c'est :", o:["Une légère hausse des prix","Une chute brutale et généralisée des cours, déclenchée par la panique","La fermeture annuelle de la bourse","Un logiciel de trading"], a:1,
+   e:"Le plus célèbre : octobre 1929 à Wall Street, qui a lancé la Grande Dépression. En quelques jours, les actions perdent une part énorme de leur valeur."},
+  {q:"Un actif est dit « liquide » quand :", o:["Il contient beaucoup d'eau","On peut le vendre rapidement et facilement sans faire bouger son prix","Sa valeur est nulle","C'est un actif interdit"], a:1,
+   e:"Les grandes actions (Apple, TotalEnergies) s'achètent et se revendent en une seconde : elles sont très liquides. Un immeuble, lui, peut mettre des mois à se vendre."},
+  {q:"Qui régule la Bourse de Paris et protège les investisseurs en France ?", o:["La SNCF","L'AMF (Autorité des Marchés Financiers)","Le ministère des Sports","L'ONU"], a:1,
+   e:"L'AMF surveille les marchés, agrée les acteurs et sanctionne les manipulations (fausses informations, délits d'initié). Avant d'investir, vérifie toujours l'agrément AMF de ton intermédiaire !"},
+  {q:"Quand les taux d'intérêt montent, le prix des obligations existantes :", o:["Baisse","Monte","Ne change jamais","Devient une action"], a:0,
+   e:"Relation inverse : une vieille obligation à 2 % devient moins intéressante que les nouvelles à 5 %, donc son prix baisse. Un mécanisme clé à connaître."},
+  {q:"Un « actif refuge » classique, recherché en temps de crise, c'est :", o:["Les billets de Monopoly","L'or","Les tickets de cinéma","Les NFT de collection"], a:1,
+   e:"En temps de panique, les investisseurs se réfugient dans l'or (et parfois le franc suisse ou les obligations d'État allemandes) : des valeurs réputées sûres."},
+  {q:"Quand la banque centrale relève fortement ses taux, les actions tech à forte croissance ont tendance à :", o:["Baisser, car leurs bénéfices lointains valent moins une fois actualisés","Monter mécaniquement","Rester figées par magie","Devenir des obligations"], a:0,
+   e:"Les valeurs de croissance promettent des profits loin dans le futur : avec des taux plus hauts, ces profits futurs sont « dévalorisés ». C'est pour ça que NVIDIA, Meta ou Tesla réagissent si fort aux annonces de taux."},
+  {q:"Le résultat net d'une entreprise, c'est :", o:["Son chiffre d'affaires","Le bénéfice final, une fois toutes les charges et les impôts payés","Son total de dettes","La somme de ses actions"], a:1,
+   e:"C'est « ce qui reste » à la fin : CA − charges − impôts. C'est sur le résultat net qu'on juge la rentabilité réelle d'une entreprise."},
+  {q:"Un ordre de bourse « à cours limité » permet de :", o:["Acheter ou vendre seulement si le prix atteint le niveau que tu as fixé","Acheter sans jamais payer","Annuler la bourse","Empêcher les autres d'acheter"], a:0,
+   e:"Exemple : NVIDIA vaut 114 €, tu places un ordre d'achat limité à 110 € → il ne s'exécutera que si le cours redescend à 110 € ou moins. Un contrôle précis du prix d'entrée."},
+];
+
+/* ============ ÉTAT ============ */
+let deck = [], qi = 0, alienHp = 100, power = 100, streak = 0, hits = 0, totalDmg = 0;
+let busy = false, answered = false, lastGood = false, lastDmg = 0;
+let bossDying = false, alienAlpha = 1, victoryT = 0, bossTimers = [];
+
+const $ = id => document.getElementById(id);
+const show = id => { document.querySelectorAll(".screen").forEach(s=>s.classList.remove("on")); $(id).classList.add("on"); };
+
+/* ============ SCÈNE SPATIALE ============ */
+const cv = $("space"), X = cv.getContext("2d");
+const W = cv.width, H = cv.height;
+let stars = [], lasers = [], parts = [], rings = [], floats = [];
+let shake = 0, flashWhite = 0, alienFlash = 0, shipFlash = 0, shipBoost = 0, thrust = 0.4, t = 0;
+for(let i=0;i<210;i++) stars.push({x:Math.random()*W, y:Math.random()*H, z:Math.random()*2.2+.3, ph:Math.random()*7});
+
+const SHIP = {x:180, y:245}, ALIEN = {x:940, y:235};
+
+function loop(){
+  t += 1;
+  X.save();
+  X.clearRect(0,0,W,H);
+  if(shake>0){ X.translate((Math.random()-.5)*shake, (Math.random()-.5)*shake); shake*=0.88; if(shake<.4) shake=0; }
+
+  const g = X.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,"#03050f"); g.addColorStop(0.55,"#0a1030"); g.addColorStop(1,"#0d1238");
+  X.fillStyle = g; X.fillRect(-30,-30,W+60,H+60);
+  drawNebulas();
+  drawPlanet();
+  drawStars();
+  drawAlien();
+  drawShip();
+  moveLasers();
+  moveRings();
+  moveParts();
+  moveFloats();
+  drawVignette();
+  drawVictoryText();
+  X.restore();
+  requestAnimationFrame(loop);
+}
+function drawNebulas(){
+  const mk = (cx,cy,r,c1)=>{
+    const n = X.createRadialGradient(cx,cy,8,cx,cy,r);
+    n.addColorStop(0,c1); n.addColorStop(1,"rgba(0,0,0,0)");
+    X.fillStyle = n; X.fillRect(cx-r,cy-r,r*2,r*2);
+  };
+  mk(560+60*Math.sin(t*0.002), 120, 260, "rgba(124,58,237,.14)");
+  mk(340+40*Math.cos(t*0.0016), 360, 210, "rgba(37,99,235,.13)");
+  mk(760, 330, 170, "rgba(224,36,94,.07)");
+}
+function drawPlanet(){
+  const px = 470, py = 590, pr = 200;
+  const pg = X.createRadialGradient(px-60,py-80,20,px,py,pr);
+  pg.addColorStop(0,"#2b4a9e"); pg.addColorStop(0.6,"#16255e"); pg.addColorStop(1,"#070d24");
+  X.globalAlpha = 0.9;
+  X.fillStyle = pg; X.beginPath(); X.arc(px,py,pr,0,7); X.fill();
+  X.strokeStyle = "rgba(140,180,255,.16)"; X.lineWidth = 3.4;
+  X.beginPath(); X.ellipse(px,py,pr+70,28,-0.2,0,7); X.stroke();
+  const mg = X.createRadialGradient(640,140,3,640,140,22);
+  mg.addColorStop(0,"#eef3ff"); mg.addColorStop(1,"#7286b8");
+  X.fillStyle = mg; X.beginPath(); X.arc(640,140,17,0,7); X.fill();
+  X.globalAlpha = 1;
+}
+function drawStars(){
+  stars.forEach(s=>{
+    const a = (0.35+0.65*(0.5+0.5*Math.sin(t*0.04*s.z+s.ph))) * (0.25+s.z*0.3);
+    X.fillStyle = "rgba(255,255,255,"+a.toFixed(2)+")";
+    const r = s.z>1.8 ? 1.8 : s.z*0.8+0.4;
+    X.fillRect(s.x, s.y, r, r);
+    s.x -= s.z*0.55; if(s.x<0){ s.x=W; s.y=Math.random()*H; }
+  });
+}
+function drawVignette(){
+  const v = X.createRadialGradient(W/2,H/2,H*0.45,W/2,H/2,W*0.72);
+  v.addColorStop(0,"rgba(0,0,14,0)"); v.addColorStop(1,"rgba(0,0,14,.42)");
+  X.fillStyle = v; X.fillRect(0,0,W,H);
+  if(flashWhite>0){ X.fillStyle = "rgba(255,255,255,"+(flashWhite*0.9)+")"; X.fillRect(0,0,W,H); flashWhite*=0.86; if(flashWhite<0.02) flashWhite=0; }
+}
+function drawShip(){
+  if(bossDying && alienHp<=0 && victoryT>60){ drawShipWreck(); return; }
+  thrust = thrust*0.9 + (shipBoost>0 ? 0.36 : 0.04);
+  if(shipBoost>0) shipBoost--;
+  const bob = Math.sin(t*0.05)*7;
+  const recoil = shipBoost>0 ? Math.sin((1-shipBoost/22)*Math.PI)*26 : 0;
+  const sx = SHIP.x + recoil, sy = SHIP.y+bob;
+  X.save(); X.translate(sx,sy);
+  if(streak>=2 && !bossDying){
+    const a = X.createRadialGradient(0,0,6,0,0,95);
+    a.addColorStop(0,"rgba(255,197,61,"+(0.2+0.09*Math.sin(t*0.3))+")");
+    a.addColorStop(1,"rgba(255,197,61,0)");
+    X.fillStyle=a; X.beginPath(); X.arc(0,0,95,0,7); X.fill();
+  }
+  const fl = 26+Math.random()*16*thrust, fw = 3.4+2*Math.random()*thrust;
+  const fc = power<=40 ? "#ff8a3a" : "#3fd0ff";
+  X.fillStyle = "rgba(63,208,255,.32)";
+  X.beginPath(); X.moveTo(-24,-fw*1.3); X.lineTo(-24-fl*1.25,0); X.lineTo(-24,fw*1.3); X.closePath(); X.fill();
+  X.fillStyle = fc; X.shadowColor = fc; X.shadowBlur = 15;
+  X.beginPath(); X.moveTo(-24,-fw); X.lineTo(-24-fl,0); X.lineTo(-24,fw); X.closePath(); X.fill();
+  X.shadowBlur = 0;
+  const bg = X.createLinearGradient(-26,-14,38,14);
+  bg.addColorStop(0,"#7e97e8"); bg.addColorStop(0.55,"#e9efff"); bg.addColorStop(1, shipFlash>0 ? "#ffdede" : "#ffffff");
+  X.fillStyle = bg; X.beginPath();
+  X.moveTo(38,0); X.lineTo(14,-11); X.lineTo(-14,-13); X.lineTo(-26,-8); X.lineTo(-26,8); X.lineTo(-10,14); X.lineTo(16,9);
+  X.closePath(); X.fill();
+  X.fillStyle = "#c8336b";
+  X.beginPath(); X.moveTo(30,1); X.lineTo(6,-8); X.lineTo(-6,-8); X.lineTo(-2,-1); X.closePath(); X.fill();
+  X.fillStyle = "#1b2f6e";
+  X.beginPath(); X.moveTo(8,-13); X.lineTo(-14,-21); X.lineTo(-19,-12); X.closePath(); X.fill();
+  X.beginPath(); X.moveTo(8,12); X.lineTo(-14,21); X.lineTo(-19,12); X.closePath(); X.fill();
+  const cg = X.createRadialGradient(14,-4,1,12,-2,9);
+  cg.addColorStop(0,"#d6f2ff"); cg.addColorStop(0.7,"#48b4e8"); cg.addColorStop(1,"#155a86");
+  X.fillStyle = cg; X.beginPath(); X.ellipse(10,-3,8.4,5.4,-0.15,0,7); X.fill();
+  X.fillStyle = "rgba(255,255,255,.85)"; X.beginPath(); X.ellipse(13,-5,3,1.3,-0.4,0,7); X.fill();
+  X.strokeStyle = "#5f79d9"; X.lineWidth = 2.2; X.lineCap = "round";
+  X.beginPath(); X.moveTo(-4,-14); X.lineTo(-15,-24); X.moveTo(-4,14); X.lineTo(-15,24); X.stroke();
+  X.fillStyle = "#ffdf6b"; X.beginPath(); X.arc(-11,-15,1.8,0,7); X.arc(-11,15,1.8,0,7); X.fill();
+  X.restore();
+  if(shipFlash>0){ shipFlash--;
+    X.fillStyle = "rgba(255,80,110,"+(shipFlash/24)+")";
+    X.beginPath(); X.arc(sx,sy+bob,44,0,7); X.fill();
+  }
+}
+function drawShipWreck(){
+  const bob = Math.sin(t*0.05)*7, sx = SHIP.x, sy = SHIP.y+bob;
+  X.save(); X.translate(sx,sy); X.rotate(0.55); X.globalAlpha = 0.5;
+  X.fillStyle = "#4d5a86";
+  X.beginPath(); X.moveTo(34,0); X.lineTo(6,-12); X.lineTo(-24,-8); X.lineTo(-24,8); X.lineTo(10,12); X.closePath(); X.fill();
+  X.globalAlpha = 1; X.restore();
+}
+function drawAlien(){
+  const bob = Math.sin(t*0.04+2)*8, ax = ALIEN.x, ay = ALIEN.y+bob;
+  const conv = bossDying ? (Math.random()-.5)*11 : 0;
+  const hpLow = alienHp<35 && alienHp>0;
+  X.save(); X.translate(ax+conv, ay); X.globalAlpha = alienAlpha;
+  const pulse = (1+0.04*Math.sin(t*0.12)) * (bossDying ? 1+Math.sin(t*0.9)*0.06 : 1);
+  X.scale(pulse,pulse);
+  if(hpLow || bossDying){
+    const aw = X.createRadialGradient(0,0,30,0,0,112);
+    aw.addColorStop(0,"rgba(224,36,94,"+(bossDying?0.42:(0.13+0.06*Math.sin(t*0.2)))+")");
+    aw.addColorStop(1,"rgba(224,36,94,0)");
+    X.fillStyle = aw; X.beginPath(); X.arc(0,0,112,0,7); X.fill();
+  }
+  X.lineCap = "round";
+  for(let i=0;i<8;i++){
+    const side = i<4 ? -1 : 1, k = i%4;
+    const baseX = side*30, baseY = 6+(k-1.5)*16;
+    const wob = Math.sin(t*0.055 + i*1.8)*(18+6*k);
+    const L = 60+14*k;
+    X.strokeStyle = "#2f6b28"; X.lineWidth = 11;
+    X.beginPath(); X.moveTo(baseX,baseY);
+    X.quadraticCurveTo(baseX+side*26, baseY+wob*0.5, baseX+side*(34+L), baseY+wob+L*0.25);
+    X.stroke();
+    X.strokeStyle = "#5aa84a"; X.lineWidth = 6;
+    X.beginPath(); X.moveTo(baseX,baseY);
+    X.quadraticCurveTo(baseX+side*26, baseY+wob*0.5, baseX+side*(34+L), baseY+wob+L*0.25);
+    X.stroke();
+    X.fillStyle = "#1c3d18";
+    for(let d=1;d<=3;d++){
+      const dd = d/3.5;
+      X.beginPath(); X.arc(baseX+side*(34+L)*dd, baseY+(wob+L*0.25)*dd+3, 2.2, 0, 7); X.fill();
+    }
+  }
+  const hb = X.createRadialGradient(-16,-18,10,0,0,66);
+  hb.addColorStop(0, alienFlash>0 ? "#ffffff" : (hpLow?"#ff9d8a":"#a8e29b"));
+  hb.addColorStop(0.75, alienFlash>0 ? "#ffd6d6" : (hpLow?"#a04b3a":"#529840"));
+  hb.addColorStop(1, alienFlash>0 ? "#ffb4b4" : (hpLow?"#6e2718":"#32632a"));
+  X.fillStyle = hb; X.shadowColor = hpLow||bossDying ? "rgba(224,36,94,.5)" : "rgba(0,0,0,0)"; X.shadowBlur = 24;
+  X.beginPath(); X.ellipse(0,0,52,60,0,0,7); X.fill(); X.shadowBlur = 0;
+  X.strokeStyle = "rgba(20,45,16,.55)"; X.lineWidth = 3.4;
+  for(let p=0;p<3;p++){ X.beginPath(); X.arc(0,0,22+p*13, Math.PI*0.86, Math.PI*1.02); X.stroke(); }
+  X.fillStyle = "#143012";
+  for(let s2=0;s2<5;s2++){
+    const ang = -Math.PI*0.86 + s2*Math.PI*0.18;
+    X.beginPath(); X.moveTo(Math.cos(ang)*40, Math.sin(ang)*46);
+    X.lineTo(Math.cos(ang)*56, Math.sin(ang)*70);
+    X.lineTo(Math.cos(ang+0.13)*41, Math.sin(ang+0.13)*47);
+    X.closePath(); X.fill();
+  }
+  const squint = alienFlash>0 ? 0.35 : 1;
+  X.fillStyle = "#0d1c0c"; X.shadowColor = "#ff3c28"; X.shadowBlur = 10;
+  X.beginPath(); X.ellipse(-18,-16,13,17*squint,0.15,0,7); X.ellipse(18,-16,13,17*squint,-0.15,0,7); X.fill();
+  X.shadowBlur = 0;
+  const pdx = (SHIP.x-ALIEN.x)*0.012, pdy = (SHIP.y-ALIEN.y)*0.006;
+  const eg = 0.5+0.5*Math.sin(t*0.09);
+  X.fillStyle = bossDying ? "#ffffff" : "rgb(255,"+(70+40*eg)+",40)";
+  X.beginPath(); X.arc(-18+pdx,-16+pdy,6,0,7); X.arc(18+pdx,-16+pdy,6,0,7); X.fill();
+  X.fillStyle = "#143012";
+  X.beginPath(); X.moveTo(-32,-30); X.lineTo(-4,-24); X.lineTo(-30,-16); X.closePath(); X.fill();
+  X.beginPath(); X.moveTo(32,-30); X.lineTo(4,-24); X.lineTo(30,-16); X.closePath(); X.fill();
+  X.fillStyle = "#0d1c0c";
+  X.beginPath(); X.ellipse(0,22,16,9,0,0,Math.PI); X.fill();
+  X.fillStyle = bossDying ? "#ffffff" : "#d9f5c8";
+  for(let th=0;th<4;th++){
+    X.beginPath(); X.moveTo(-10+th*6.6,22); X.lineTo(-7+th*6.6,28); X.lineTo(-4+th*6.6,22); X.closePath(); X.fill();
+  }
+  X.restore();
+  alienFlash = Math.max(0, alienFlash-1);
+  if(bossDying && Math.random()<0.35) spawnPart(ax+(Math.random()*90-45), ay+(Math.random()*110-55), Math.random()<0.5?"#ffd23d":"#ff7b3a", 20, 16, -0.7);
+  if(!bossDying && hpLow && Math.random()<0.22) spawnPart(ax-30, ay-30, "#555a66", 10, 14, -1.4);
+  if(alienAlpha>0.02){
+    X.globalAlpha = alienAlpha>1?1:alienAlpha;
+    X.fillStyle = "#ff8fb0"; X.font = "900 13px ui-monospace,monospace"; X.textAlign = "center";
+    X.fillText("👾 ZORG — SEIGNEUR DE LA MANIPULATION", ax, ay-92);
+    X.globalAlpha = 1;
+  }
+}
+function moveLasers(){
+  for(let i=lasers.length-1;i>=0;i--){
+    const L = lasers[i];
+    L.x += L.vx;
+    X.save(); X.lineCap = "round"; X.shadowColor = L.c; X.shadowBlur = 26;
+    X.strokeStyle = L.c+"66"; X.lineWidth = 13;
+    X.beginPath(); X.moveTo(L.x,L.y); X.lineTo(L.x-L.vx*3.6,L.y); X.stroke();
+    X.strokeStyle = L.c; X.lineWidth = 6;
+    X.beginPath(); X.moveTo(L.x,L.y); X.lineTo(L.x-L.vx*3.2,L.y); X.stroke();
+    X.strokeStyle = "#ffffff"; X.lineWidth = 2.4;
+    X.beginPath(); X.moveTo(L.x,L.y); X.lineTo(L.x-L.vx*2,L.y); X.stroke();
+    X.shadowBlur = 4;
+    X.fillStyle = "#ffffff"; X.beginPath(); X.arc(L.x,L.y,4,0,7); X.fill();
+    X.restore();
+    if(L.vx>0 && L.x>=ALIEN.x-58){ impactAlien(L.dmg); lasers.splice(i,1); }
+    else if(L.vx<0 && L.x<=SHIP.x+46){ impactShip(); lasers.splice(i,1); }
+  }
+}
+function impactAlien(dmg){
+  alienFlash = 12; shake = 13; boom();
+  addRing(ALIEN.x-18, ALIEN.y, 90, "rgba(255,210,61,.8)");
+  for(let i2=0;i2<30;i2++) spawnPart(ALIEN.x-42+Math.random()*34, ALIEN.y+(Math.random()*64-32), Math.random()<.5?"#ffd23d":"#ff7b3a", 28);
+  alienHp = Math.max(0, alienHp-dmg);
+  floatTxt(ALIEN.x-10, ALIEN.y-64, "-"+dmg+" PV", "#ffd23d");
+  totalDmg += dmg; updateBars();
+  if(alienHp<=0 && !bossDying) killBoss();
+}
+function impactShip(){
+  shipFlash = 22; shake = 11; buzz();
+  addRing(SHIP.x+30, SHIP.y, 70, "rgba(255,95,126,.8)");
+  for(let i2=0;i2<22;i2++) spawnPart(SHIP.x+34, SHIP.y+(Math.random()*36-18), Math.random()<.5?"#ff5f7e":"#ffffff", 24);
+  power = Math.max(0, power-20);
+  floatTxt(SHIP.x+14, SHIP.y-56, "-20 FORCE", "#ff5f7e");
+  updateBars();
+  if(power<=0 && !bossDying) loseGame();
+}
+/* ---- MORT SPECTACULAIRE DU BOSS (multi-phases) ---- */
+function killBoss(){
+  bossDying = true;
+  const phases = [
+    [150,  ()=>{ shake = 10; boom(); spawnPart(ALIEN.x+20, ALIEN.y-30, "#ffd23d", 24); }],
+    [400,  ()=>{ shake = 12; boom(); flashWhite = 0.25; addRing(ALIEN.x-10, ALIEN.y-20, 80, "rgba(255,120,60,.9)"); }],
+    [650,  ()=>{ shake = 14; boom(); spawnPart(ALIEN.x-30, ALIEN.y+30, "#ff7b3a", 26); }],
+    [900,  ()=>{ shake = 16; boom(); flashWhite = 0.35; addRing(ALIEN.x+15, ALIEN.y, 110, "rgba(255,210,61,.9)"); }],
+    [1150, ()=>{ shake = 18; boom(); }],
+    [1400, ()=>{ shake = 22; boom(); flashWhite = 0.55; addRing(ALIEN.x, ALIEN.y, 280, "rgba(255,255,255,.95)"); }],
+    [1650, ()=>{ fanfare(); }],
+    [1850, ()=>{ flashWhite = 1; shake = 27; addRing(ALIEN.x, ALIEN.y, 430, "rgba(255,224,130,1)");
+                 for(let i=0;i<140;i++) spawnPart(ALIEN.x+(Math.random()*150-75), ALIEN.y+(Math.random()*190-95),
+                   ["#ffd23d","#ff7b3a","#7ee2ff","#ffffff","#ff5f7e"][i%5], 38, 32, (Math.random()-0.8)); }],
+    [1950, ()=>{ const dv = setInterval(()=>{ alienAlpha = Math.max(0, alienAlpha-0.07); if(alienAlpha<=0) clearInterval(dv); }, 40); }],
+  ];
+  phases.forEach(p2=>bossTimers.push(setTimeout(p2[1], p2[0])));
+  bossTimers.push(setTimeout(winGame, 3450));
+}
+function drawVictoryText(){
+  if(!bossDying || alienAlpha>0.05) return;
+  victoryT++;
+  const sc = Math.min(1, victoryT/40), a2 = Math.min(1, victoryT/28);
+  X.save();
+  X.translate(W/2, H/2-30); X.scale(sc,sc); X.globalAlpha = a2;
+  X.textAlign = "center"; X.font = "900 44px 'Segoe UI',sans-serif";
+  X.shadowColor = "rgba(255,197,61,.95)"; X.shadowBlur = 34;
+  X.fillStyle = "#ffd23d"; X.fillText("⚡ ZORG ÉLIMINÉ ! ⚡", 0, 0);
+  X.font = "700 17px 'Segoe UI',sans-serif"; X.shadowBlur = 12; X.fillStyle = "#cfe0ff";
+  X.fillText("La galaxie de la finance est libre — grâce à tes connaissances 📈", 0, 34);
+  X.restore(); X.globalAlpha = 1;
+  if(Math.random()<0.35) spawnPart(Math.random()*W, H+4, ["#ffd23d","#7ee2ff","#ff7bb0"][Math.floor(Math.random()*3)], 30, 34, -2.5);
+}
+function spawnPart(px,py,c,sp,life,vyExtra){
+  parts.push({x:px,y:py,vx:(Math.random()-.5)*sp, vy:((vyExtra!==undefined?vyExtra:0)+(Math.random()-.5))*sp, c:c, life:life||22, life0:life||22});
+}
+function addRing(rx,ry,mx,c){ rings.push({x:rx,y:ry,r:8,mx:mx,c:c}); }
+function moveRings(){
+  for(let i2=rings.length-1;i2>=0;i2--){
+    const r = rings[i2]; r.r += (r.mx-r.r)*0.18 + 3;
+    X.strokeStyle = r.c; X.globalAlpha = Math.max(0, 1-r.r/r.mx); X.lineWidth = 5;
+    X.beginPath(); X.arc(r.x,r.y,r.r,0,7); X.stroke();
+    X.globalAlpha = 1;
+    if(r.r>=r.mx-4) rings.splice(i2,1);
+  }
+}
+function moveParts(){
+  for(let i2=parts.length-1;i2>=0;i2--){
+    const p = parts[i2]; p.x+=p.vx; p.y+=p.vy; p.life--;
+    X.globalAlpha = Math.max(0, p.life/p.life0);
+    X.fillStyle = p.c; X.beginPath(); X.arc(p.x,p.y,2.6,0,7); X.fill();
+    X.globalAlpha = 1;
+    if(p.life<=0) parts.splice(i2,1);
+  }
+}
+function floatTxt(fx,fy,txt,c){ floats.push({x:fx,y:fy,txt:txt,c:c,life:40}); }
+function moveFloats(){
+  X.textAlign = "center"; X.font = "900 17px 'Segoe UI',sans-serif";
+  for(let i2=floats.length-1;i2>=0;i2--){
+    const f2 = floats[i2]; f2.y -= 1; f2.life--;
+    X.globalAlpha = Math.min(1,f2.life/18);
+    X.fillStyle = f2.c; X.fillText(f2.txt, f2.x, f2.y);
+    X.globalAlpha = 1;
+    if(f2.life<=0) floats.splice(i2,1);
+  }
+}
+function updateBars(){
+  $("hpFill").style.width = alienHp+"%"; $("hpTxt").textContent = alienHp;
+  const pb = $("pwBar");
+  pb.firstElementChild.style.width = power+"%"; $("pwTxt").textContent = power;
+  pb.classList.toggle("low", power<=40);
+  $("badgePower").textContent = "⚡ Force : "+power;
+  $("badgeStreak").textContent = "🔥 Série : "+streak;
+  $("badgeScore").textContent = "💥 Dégâts infligés : "+totalDmg;
+  const st = $("streak");
+  if(streak>=2){ st.textContent = "🔥 Série ×"+streak+" : dégâts boostés !"; st.classList.add("on"); }
+  else st.classList.remove("on");
+}
+
+/* ============ SONS (Web Audio, zéro dépendance) ============ */
+let AC = null;
+function ac(){ if(!AC) AC = new (window.AudioContext||window.webkitAudioContext)(); return AC; }
+function zap(){ try{ const a=ac(), o=a.createOscillator(), g=a.createGain();
+  o.type="sawtooth"; o.frequency.setValueAtTime(900,a.currentTime); o.frequency.exponentialRampToValueAtTime(120,a.currentTime+0.22);
+  g.gain.setValueAtTime(0.12,a.currentTime); g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+0.25);
+  o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime+0.26); }catch(e){} }
+function boom(){ try{ const a=ac(), b=a.createBuffer(1,a.sampleRate*0.3,a.sampleRate), d=b.getChannelData(0);
+  for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2.2);
+  const s=a.createBufferSource(), g=a.createGain(); g.gain.value=0.25; s.buffer=b; s.connect(g); g.connect(a.destination); s.start(); }catch(e){} }
+function buzz(){ try{ const a=ac(), o=a.createOscillator(), g=a.createGain();
+  o.type="square"; o.frequency.value=110; g.gain.setValueAtTime(0.1,a.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+0.3);
+  o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime+0.3); }catch(e){} }
+function fanfare(){ try{ const a=ac(), notes=[523,659,784,1047,1319];
+  notes.forEach((f,i2)=>{ const o=a.createOscillator(), g=a.createGain(); o.type="triangle"; o.frequency.value=f;
+    g.gain.setValueAtTime(0.001,a.currentTime+i2*0.15); g.gain.exponentialRampToValueAtTime(0.16,a.currentTime+i2*0.15+0.03);
+    g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+i2*0.15+0.4);
+    o.connect(g); g.connect(a.destination); o.start(a.currentTime+i2*0.15); o.stop(a.currentTime+i2*0.15+0.45); }); }catch(e){} }
+
+/* ============ DÉROULEMENT ============ */
+function startGame(){
+  deck = QUESTIONS.slice();
+  for(let i=deck.length-1;i>0;i--){ const j2=Math.floor(Math.random()*(i+1)); [deck[i],deck[j2]]=[deck[j2],deck[i]]; }
+  qi = 0; alienHp = 100; power = 100; streak = 0; hits = 0; totalDmg = 0;
+  lasers = []; parts = []; rings = []; floats = [];
+  bossDying = false; alienAlpha = 1; victoryT = 0;
+  bossTimers.forEach(clearTimeout); bossTimers = [];
+  updateBars();
+  show("screenBattle");
+  setTimeout(()=>{ show("screenQuiz"); renderQ(); }, 1600);
+}
+function renderQ(){
+  answered = false;
+  const Q = deck[qi];
+  $("qCount").textContent = "Question "+(qi+1)+"/"+deck.length;
+  $("qText").textContent = Q.q;
+  $("explain").classList.remove("on");
+  $("attackBtn").classList.remove("on");
+  const letters = ["A","B","C","D"];
+  $("opts").innerHTML = Q.o.map((o,i)=>{
+    return '<button class="opt" id="opt'+i+'" onclick="pick('+i+')"><span class="key">'+letters[i]+'</span><span>'+o+'</span></button>';
+  }).join("");
+}
+function pick(i){
+  if(answered) return;
+  answered = true;
+  const Q = deck[qi], good = (i===Q.a);
+  lastGood = good;
+  for(let k=0;k<4;k++) $("opt"+k).disabled = true;
+  if(good){
+    $("opt"+i).classList.add("good");
+    hits++; streak++;
+    lastDmg = Math.round((18+Math.min(16,(streak-1)*5)) * power/100);
+    $("explain").innerHTML = '<span class="tag">✅ Bonne réponse ! Dégâts préparés : '+lastDmg+' PV</span><br>'+Q.e;
+    zap(); $("attackBtn").textContent = "⚡ ENVOYER L'ATTAQUE SUR ZORG !"; $("attackBtn").classList.add("on");
+  } else {
+    $("opt"+i).classList.add("bad","shakey"); $("opt"+Q.a).classList.add("good");
+    streak = 0; lastDmg = 0;
+    $("explain").innerHTML = '<span class="tag">❌ Raté ! Le capitaine perd 20 de force…</span><br>'+Q.e;
+    buzz(); $("attackBtn").textContent = "😖 REGARDER LE CAPITAINE ENCAISSER"; $("attackBtn").classList.add("on");
+  }
+  $("explain").classList.add("on");
+  updateBars();
+}
+function afterAnswer(){
+  if(!answered || busy || bossDying) return;
+  busy = true;
+  show("screenBattle");
+  if(lastGood){
+    shipBoost = 22;
+    lasers.push({x:SHIP.x+44, y:SHIP.y, vx:14.5, c:"#3fd0ff", dmg:lastDmg}); zap();
+  } else {
+    lasers.push({x:ALIEN.x-64, y:ALIEN.y+18, vx:-13, c:"#ff4d6d"}); buzz();
+  }
+  setTimeout(()=>{
+    busy = false;
+    if(bossDying || alienHp<=0 || power<=0) return;
+    qi++;
+    if(qi>=deck.length) winGame();
+    else { show("screenQuiz"); renderQ(); }
+  }, 1900);
+}
+function rank(){
+  const n = deck.length, r = hits/n;
+  if(r>=0.85) return ["🏆 AMIRAL DE LA BOURSE","Tu maîtrises la finance comme un pro : propriétés d'entreprise, dividendes, risque, intérêts composés… Tu as le profil d'un futur banquier d'affaires !"];
+  if(r>=0.6)  return ["🎖️ COMMANDANT DU TRADING","Très solide ! Encore quelques révisions sur les notions ratées et tu seras au niveau des étudiants en univers de commerce."];
+  if(r>=0.4)  return ["🛰️ LIEUTENANT ANALYSTE","Bonne base ! Relis les explications du quiz : action vs obligation, risque/rendement, capitalisation… et retente la mission."];
+  return ["🎒 CADET DE LA GALAXIE FINANCE","Le plus dur est fait : tu connais maintenant tes points faibles. Relance la mission et vise la victoire !"];
+}
+function winGame(){
+  bossTimers.forEach(clearTimeout); bossTimers = [];
+  const rk = rank();
+  $("endTitle").textContent = "✨ VICTOIRE ! ZORG EST VAINCU ✨";
+  $("endTitle").className = "end-title win";
+  $("endStats").innerHTML = '<div class="card"><div class="lbl">Score</div><div class="val">'+hits+'/'+deck.length+'</div></div>'+
+    '<div class="card"><div class="lbl">Dégâts infligés</div><div class="val">'+totalDmg+'</div></div>'+
+    '<div class="card"><div class="lbl">Force restante</div><div class="val">'+power+'</div></div>'+
+    '<div class="card"><div class="lbl">Rang</div><div class="val" style="font-size:1rem">'+rk[0]+'</div></div>';
+  $("endMsg").innerHTML = "🛸 La galaxie de la finance est sauvée… grâce à tes connaissances !<br><b>"+rk[0]+"</b> — "+rk[1];
+  show("screenEnd");
+}
+function loseGame(){
+  boom();
+  for(let i2=0;i2<40;i2++) spawnPart(SHIP.x+(Math.random()*60-30), SHIP.y+(Math.random()*60-30), "#ff7b3a", 30);
+  shake = 22;
+  setTimeout(()=>{
+    const rk = rank();
+    $("endTitle").textContent = "💥 CAPITAINE À TERRE…";
+    $("endTitle").className = "end-title lose";
+    $("endStats").innerHTML = '<div class="card"><div class="lbl">Score</div><div class="val">'+hits+'/'+deck.length+'</div></div>'+
+      '<div class="card"><div class="lbl">PV restants à ZORG</div><div class="val">'+alienHp+'</div></div>'+
+      '<div class="card"><div class="lbl">Rang</div><div class="val" style="font-size:1rem">'+rk[0]+'</div></div>';
+    $("endMsg").innerHTML = "👾 ZORG rigole… mais la connaissance est la plus puissante des armes !<br><b>"+rk[0]+"</b> — "+rk[1];
+    show("screenEnd");
+  }, 2200);
+}
+document.addEventListener("keydown", e=>{
+  const k = parseInt(e.key);
+  if(k>=1 && k<=4 && $("screenQuiz").classList.contains("on") && !answered) pick(k-1);
+  if(e.key==="Enter" && !busy && answered && $("screenQuiz").classList.contains("on") && $("attackBtn").classList.contains("on")) afterAnswer();
+});
+loop();
+</script>
+</body>
+</html>
